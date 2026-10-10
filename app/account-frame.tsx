@@ -1,0 +1,10 @@
+"use client";
+import { Search, Inbox, Users, ArrowLeft } from "lucide-react";
+import AccountMenu from "./account-menu";
+import { BrandMark } from "./brand";
+import { ThemeControl } from "./theme-controls";
+export default function AccountFrame({children,title,description,displayName,email,signInHref,signOutHref}:{children:React.ReactNode;title:string;description:string;displayName:string;email:string;signInHref:string;signOutHref:string}){
+ const navigate=(url:string)=>window.location.assign(url);
+ const links=[{title:"Discover",href:"/",icon:Search},{title:"Collaborations",href:"/?view=inbox",icon:Inbox},{title:"My profile",href:"/?view=profiles",icon:Users}];
+ return <div className="account-page-shell"><header className="site-header"><div className="header-inner"><a className="brand-lockup" href="/"><BrandMark/><span>Community Pulse</span></a><nav className="desktop-navigation" aria-label="Main navigation">{links.map(l=><button key={l.href} onClick={()=>navigate(l.href)}><span className="nav-icon"><l.icon size={20}/></span><span>{l.title}</span></button>)}</nav><div className="header-account"><ThemeControl/><AccountMenu signedIn displayName={displayName} email={email} signInHref={signInHref} signOutHref={signOutHref} onProfile={()=>navigate("/?view=profiles")} onHelp={()=>navigate("/?help=roles")}/></div></div></header><main className="account-page-main"><a className="account-page-back" href="/"><ArrowLeft size={17}/>Back to Community Pulse</a><div className="account-page-heading"><h1>{title}</h1><p>{description}</p></div><div className="account-page-card">{children}</div></main><footer className="workspace-footer account-page-footer"><div className="footer-credit">Made by <a href="https://jacksonx28.github.io/portfolio/" target="_blank" rel="noreferrer">Jackson</a></div><a className="text-link" href="/?help=roles">About profile status</a></footer><nav className="mobile-navigation" aria-label="Mobile main navigation">{links.map(l=><button key={l.href} onClick={()=>navigate(l.href)}><span className="nav-icon"><l.icon size={20}/></span><span className="nav-label">{l.title}</span></button>)}</nav></div>;
+}

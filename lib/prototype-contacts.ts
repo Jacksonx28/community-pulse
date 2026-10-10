@@ -1,0 +1,12 @@
+import type { Community } from "@/app/pulse";
+export const prototypeContacts:Community[]=["Jasich","Jasich","Ssheyi","Ssheyi"].map((name,index)=>({
+  id:`prototype-${name.toLowerCase()}-${index}`,name:["Orbit","Mint House","Arcade Guild","Signal"][index],kind:"Project",ecosystem:["Robinhood Chain","Arc","Sui","Ethereum"][index],
+  description:`A prototype project contact using the name ${name}. Project affiliation and contact methods are demonstration data.`,
+  representative:name,role:"Community manager",handle:"",official_url:"",open:1,created_at:"",mine:false,
+  spots_listed:1,available_spots:30,allocated_spots:0,spots_deadline:"2026-12-31",eligibility:"Demo opportunity for NFT and gaming communities.",contact_route:"CM",hiring:1,hiring_details:"Prototype role: coordinate community partnerships and whitelist allocations.",compensation:"Demo role · terms to discuss",prototype:true,manager_id:`prototype-cm-${name.toLowerCase()}`,project_category:"NFT",handles_spots:1,x_user_id:"",discord_user_id:"",
+}));
+export const prototypeSource:Community={id:"prototype-dao",name:"Demo DAO",kind:"Community",ecosystem:"Multichain",description:"A demo DAO interested in NFT and gaming collaborations.",audience_size:1200,interests:"NFTs and gaming",past_collaborations:"Example community campaign (demo only)",representative:"You",role:"Collab manager",handle:"",official_url:"",open:1,created_at:"",mine:false,prototype:true};
+
+export const prototypeCMs:Community[]=["Jasich","Ssheyi"].map((name,i)=>({id:`prototype-cm-${name.toLowerCase()}`,name,kind:"CM",ecosystem:"Multichain",description:"Prototype CM profile. Bio, work status, and project associations are demo data.",representative:name,role:"Collab manager",handle:"",official_url:"",open:1,created_at:"",mine:false,prototype:true,manager_id:`prototype-cm-${name.toLowerCase()}`,availability:i?"Open to more projects":"Available for hire",current_projects:i?"Arcade Guild and Signal (demo)":"Orbit and Mint House (demo)"}));
+export const prototypeTeamProject:Community={...prototypeContacts[0],id:"prototype-team-project",name:"Northstar",ecosystem:"Base",representative:"Project team",role:"Founder",contact_route:"Project team",manager_id:"prototype-team-project",description:"A demo project offering spots directly without a CM.",hiring:0};
+export const prototypeProjectSource:Community={...prototypeTeamProject,id:"prototype-requesting-project",name:"Demo hiring project"};

@@ -1,0 +1,1 @@
+ALTER TABLE `collaborations` ADD `community_platform` text DEFAULT 'Not specified' NOT NULL;

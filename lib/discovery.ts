@@ -1,0 +1,2 @@
+export function remainingSpots(c:{available_spots?:number;allocated_spots?:number}){return Math.max(0,(c.available_spots||0)-(c.allocated_spots||0))}
+export function listingOpen(c:{open:number;spots_listed?:number;spots_deadline?:string;available_spots?:number;allocated_spots?:number},today=new Date().toISOString().slice(0,10)){return !!c.open&&!!c.spots_listed&&!!c.spots_deadline&&c.spots_deadline>=today&&remainingSpots(c)>0}
