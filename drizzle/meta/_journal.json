@@ -57,6 +57,13 @@
       "when": 1791389452761,
       "tag": "0007_ambiguous_darwin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791655027485,
+      "tag": "0008_conscious_champions",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `communities` ADD `banner_url` text DEFAULT '' NOT NULL;

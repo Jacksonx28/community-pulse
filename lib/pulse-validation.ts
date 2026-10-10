@@ -14,6 +14,7 @@ export const communityInput=z.object({
   interests:z.string().trim().max(300).default(""),
   pastCollaborations:z.string().trim().max(600).default(""),
   avatarUrl:z.union([webUrl,z.literal("")]).default(""),
+  bannerUrl:z.union([webUrl,z.literal("")]).default(""),
   availability:z.enum(["Available for hire","Open to more projects","Busy"]).default("Available for hire"),
   currentProjects:z.string().trim().max(400).default(""),
   contactRoute:z.enum(["CM","Project team"]).default("CM"),

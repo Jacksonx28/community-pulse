@@ -12,6 +12,7 @@ export const communities = sqliteTable("communities", {
   interests: text("interests").notNull().default(""),
   pastCollaborations: text("past_collaborations").notNull().default(""),
   avatarUrl: text("avatar_url").notNull().default(''),
+  bannerUrl: text("banner_url").notNull().default(''),
   availability: text("availability").notNull().default('Available for hire'),
   currentProjects: text("current_projects").notNull().default(''),
   contactRoute: text("contact_route").notNull().default('CM'),

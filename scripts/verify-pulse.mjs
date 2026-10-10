@@ -133,10 +133,13 @@ assert.equal(discovery.remainingSpots((await (await route.GET()).json()).communi
 assert.equal((await post("community",{...teamData,id:teamId,availableSpots:9})).status,400);
 // Personal CM profiles, availability, and job applications share the same inbox.
 user={userId:"cm-person",email:"cm@example.test"};
-const cmData={...profile("Independent CM"),kind:"CM",representative:"Independent CM",officialUrl:"",handle:"",availability:"Open to more projects",currentProjects:"Gaming campaign",avatarUrl:"https://example.test/avatar.png"};
+const cmData={...profile("Independent CM"),kind:"CM",representative:"Independent CM",officialUrl:"",handle:"",availability:"Open to more projects",currentProjects:"Gaming campaign",avatarUrl:"https://example.test/avatar.png",bannerUrl:"https://example.test/banner.png"};
 const cmResponse=await post("community",cmData);assert.equal(cmResponse.status,201);const cmId=(await cmResponse.json()).id;
 let cm=(await (await route.GET()).json()).communities.find(c=>c.id===cmId);const cmIdentity=cm.manager_id;
-assert.equal(cm.availability,"Open to more projects");assert.equal(cm.avatar_url,"https://example.test/avatar.png");
+assert.equal(cm.availability,"Open to more projects");assert.equal(cm.avatar_url,"https://example.test/avatar.png");assert.equal(cm.banner_url,"https://example.test/banner.png");
+assert.equal((await post("community",{...cmData,id:cm.id,bannerUrl:"javascript:alert(1)"})).status,400,"Reject executable banner URLs");
+assert.equal((await post("community",{...cmData,id:cm.id,bannerUrl:"https://example.test/banner-updated.png"})).status,200);
+assert.equal(sqlite.prepare("SELECT banner_url FROM communities WHERE id=?").get(cm.id).banner_url,"https://example.test/banner-updated.png");
 assert.equal((await post("community",{...cmData,id:cmId,description:"Updated personal bio for a collab manager."})).status,200);
 cm=(await (await route.GET()).json()).communities.find(c=>c.id===cmId);assert.equal(cm.manager_id,cmIdentity,"Editing bio preserves CM identity");
 const linkedOwnProject=await post("community",{...projectData,name:"CM represented project",representative:cmData.representative,managerProfileId:cmId});assert.equal(linkedOwnProject.status,201);
