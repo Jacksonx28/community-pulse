@@ -10,7 +10,7 @@
     {
       "binding": "DB",
       "database_name": "community-pulse",
-      "database_id": "00000000-0000-4000-8000-000000000000",
+      "database_id": "0cb677e5-8907-4664-8a77-f910ec100c4c",
       "migrations_dir": "migrations"
     }
   ],
