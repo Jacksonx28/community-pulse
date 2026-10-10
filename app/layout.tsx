@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import SupportChat from "./support-chat";
 import InteractionEffects from "./interaction-effects";
 import { AppearanceProvider } from "./theme-controls";
 
@@ -19,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased"><AppearanceProvider><InteractionEffects/>{children}</AppearanceProvider></body>
+      <body className="antialiased"><AppearanceProvider><InteractionEffects/>{children}<SupportChat/></AppearanceProvider></body>
     </html>
   );
 }

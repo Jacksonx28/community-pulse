@@ -159,6 +159,26 @@ body{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe
 .project-contact-intro > .secondary-btn{align-self:center;flex:none;max-width:100%;white-space:nowrap;min-height:44px}
 @media(max-width:700px){.project-contact-intro{flex-direction:column;align-items:stretch;gap:16px;padding:18px}.project-contact-intro > .secondary-btn{align-self:flex-start;margin-left:32px;max-width:calc(100% - 32px);white-space:normal}}
 
+/* Header icons, viewport help and consistently grouped filters. */
+.header-account .account-button,.header-account .theme-control{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;line-height:1}
+.header-account .account-button>svg,.header-account .theme-control>svg{display:block;width:19px;height:19px;margin:0}
+.support-launcher{position:fixed;inset:auto 24px 24px auto;z-index:40;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);box-shadow:0 3px 14px #10235012}
+.support-launcher>svg{display:block;flex:none;margin:0}
+.support-sheet{max-width:430px!important;height:100dvh;max-height:100dvh;padding:24px!important;padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
+.support-sheet [data-slot=sheet-header]{padding:0 32px 16px 0;border-bottom:1px solid var(--border)}
+.filter-row.filter-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;width:100%;margin:16px 0 0;padding:20px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--foreground)}
+.filter-panel-header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.filter-panel-header strong{font-size:14px;font-weight:650}
+.filter-panel-header .text-link{font-size:13px;min-height:36px;padding:0}
+.filter-panel>label:not(.switch-label),.filter-field{display:flex;flex-direction:column;gap:8px;font-size:13px!important;font-weight:550;line-height:1.5;min-width:0;color:var(--foreground)}
+.discover-surface .filter-panel select,.filter-panel .pulse-select{width:100%;height:44px;min-height:44px!important;padding:10px 12px;border:1px solid var(--input);border-radius:6px;background:var(--card);color:var(--foreground);font-size:14px!important;font-weight:400}
+.filter-panel select:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.filter-panel .switch-label{justify-content:flex-start;white-space:normal;margin:0;min-height:44px;font-size:14px;line-height:1.5;color:var(--muted-foreground)}
+.filter-panel .switch-label [data-slot=switch]{flex:none}
+.project-contacts .project-contact-filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:900px){.support-launcher{right:18px;bottom:calc(88px + env(safe-area-inset-bottom))}}
+@media(max-width:700px){.filter-row.filter-panel,.project-contacts .project-contact-filters{grid-template-columns:1fr;gap:16px;padding:18px}.filter-panel-header{gap:10px}.support-sheet{width:100vw!important;max-width:100vw!important;padding:20px!important}.support-launcher{right:16px}}
+
 /* The panoramic splash is shown in full, above the sign-in content. */
 .login-shell{min-height:100dvh;background:var(--background);color:var(--foreground)}
 .login-art{width:100%;background:#fff58a;border-bottom:1px solid var(--border)}
