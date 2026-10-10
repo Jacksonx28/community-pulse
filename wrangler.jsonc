@@ -14,10 +14,5 @@
       "migrations_dir": "migrations"
     }
   ],
-  "vars": {
-    "SUPABASE_URL": "",
-    "SUPABASE_PUBLISHABLE_KEY": "",
-    "AUTH_GOOGLE_ENABLED": "false",
-    "AUTH_X_ENABLED": "false"
-  }
+  "keep_vars": true
 }
