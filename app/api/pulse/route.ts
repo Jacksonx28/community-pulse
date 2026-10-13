@@ -8,13 +8,13 @@ export async function GET(){
     const user=await getUser(); const db=database();
     const {results}=await db.prepare("SELECT c.*, COALESCE((SELECT SUM(r.approved_spots) FROM collaborations r WHERE r.target_id=c.id AND r.kind='Whitelist spots' AND r.status IN ('accepted','completed')),0) AS allocated_spots FROM communities c ORDER BY c.created_at DESC LIMIT 500").all();
     const contacts=(await db.prepare("SELECT project_id,cm_id FROM project_cm_contacts").all()).results as {project_id:string,cm_id:string}[];
-    const team=(await db.prepare("SELECT pt.project_id,pt.cm_id,pt.status,p.name AS project_name,c.name AS cm_name,c.owner_id AS cm_owner,p.owner_id AS project_owner FROM project_team pt JOIN communities p ON p.id=pt.project_id AND p.kind='Project' JOIN communities c ON c.id=pt.cm_id AND c.kind='CM'").all()).results as {project_id:string,cm_id:string,status:string,project_name:string,cm_name:string,cm_owner:string,project_owner:string}[];
+    const team=(await db.prepare("SELECT pt.project_id,pt.cm_id,pt.status,p.name AS project_name,c.name AS cm_name,c.owner_id AS cm_owner,p.owner_id AS project_owner FROM project_team pt JOIN communities p ON p.id=pt.project_id AND p.kind IN ('Project','Community') JOIN communities c ON c.id=pt.cm_id AND c.kind='CM'").all()).results as {project_id:string,cm_id:string,status:string,project_name:string,cm_name:string,cm_owner:string,project_owner:string}[];
     const list=results.map(({owner_id,...row})=>({...row,mine:owner_id===user?.userId,cm_ids:contacts.filter(link=>link.project_id===row.id).map(link=>link.cm_id),listed_project_ids:contacts.filter(link=>link.cm_id===row.id).map(link=>link.project_id),approved_cm_ids:team.filter(link=>link.project_id===row.id&&link.status==='accepted').map(link=>link.cm_id),approved_project_ids:team.filter(link=>link.cm_id===row.id&&link.status==='accepted').map(link=>link.project_id)}));
     const requests=user ? (await db.prepare(`SELECT r.*, s.name AS source_name, t.name AS target_name,
-      CASE WHEN t.owner_id = ? OR EXISTS (SELECT 1 FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=t.id AND t.kind='Project' AND pt.status='accepted' AND cm.owner_id=? AND (r.assigned_cm_id IS NULL OR r.assigned_cm_id=cm.id)) THEN 1 ELSE 0 END AS incoming,
+      CASE WHEN t.owner_id = ? OR EXISTS (SELECT 1 FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=t.id AND t.kind IN ('Project','Community') AND pt.status='accepted' AND cm.owner_id=? AND (r.assigned_cm_id IS NULL OR r.assigned_cm_id=cm.id)) THEN 1 ELSE 0 END AS incoming,
       CASE WHEN COALESCE(reads.seen_at,'') < COALESCE(NULLIF(r.updated_at,''),r.created_at) THEN 1 ELSE 0 END AS unread
       FROM collaborations r JOIN communities s ON s.id=r.source_id JOIN communities t ON t.id=r.target_id LEFT JOIN request_reads reads ON reads.request_id=r.id AND reads.user_id=?
-      WHERE s.owner_id=? OR t.owner_id=? OR EXISTS (SELECT 1 FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=t.id AND t.kind='Project' AND pt.status='accepted' AND cm.owner_id=? AND (r.assigned_cm_id IS NULL OR r.assigned_cm_id=cm.id)) ORDER BY COALESCE(NULLIF(r.updated_at,''),r.created_at) DESC LIMIT 500`).bind(user.userId,user.userId,user.userId,user.userId,user.userId,user.userId).all()).results : [];
+      WHERE s.owner_id=? OR t.owner_id=? OR EXISTS (SELECT 1 FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=t.id AND t.kind IN ('Project','Community') AND pt.status='accepted' AND cm.owner_id=? AND (r.assigned_cm_id IS NULL OR r.assigned_cm_id=cm.id)) ORDER BY COALESCE(NULLIF(r.updated_at,''),r.created_at) DESC LIMIT 500`).bind(user.userId,user.userId,user.userId,user.userId,user.userId,user.userId).all()).results : [];
     const invitations=team.filter(t=>t.cm_owner===user?.userId||t.project_owner===user?.userId).map(({cm_owner,project_owner,...t})=>({...t,owner:project_owner===user?.userId,can_accept:cm_owner===user?.userId}));
     const reports=user?(await db.prepare("SELECT pr.id,pr.profile_id,pr.kind,pr.message,pr.status,pr.created_at,c.name AS profile_name,CASE WHEN c.owner_id=? THEN 1 ELSE 0 END AS can_review FROM profile_reports pr JOIN communities c ON c.id=pr.profile_id WHERE c.owner_id=? OR pr.reporter_id=? ORDER BY pr.created_at DESC LIMIT 100").bind(user.userId,user.userId,user.userId).all()).results:[];
     return json({communities:list,requests,invitations,reports,signedIn:!!user});
@@ -30,11 +30,11 @@ export async function POST(request:Request){
     if(body.action==="team"){
       const input=teamInput.safeParse(body.data);if(!input.success)return json({error:"Invalid team action."},400);
       const d=input.data;
-      const project=await db.prepare("SELECT owner_id FROM communities WHERE id=? AND kind='Project'").bind(d.projectId).first<{owner_id:string}>();
+      const project=await db.prepare("SELECT owner_id FROM communities WHERE id=? AND kind IN ('Project','Community')").bind(d.projectId).first<{owner_id:string}>();
       const cm=await db.prepare("SELECT owner_id FROM communities WHERE id=? AND kind='CM'").bind(d.cmId).first<{owner_id:string}>();
-      if(!project||!cm)return json({error:"Choose a registered project and CM."},400);
+      if(!project||!cm)return json({error:"Choose a registered project or community and CM."},400);
       if(d.mode==='invite'||d.mode==='revoke'){
-        if(project.owner_id!==user.userId)return json({error:"Only the project owner can manage inbox invitations."},403);
+        if(project.owner_id!==user.userId)return json({error:"Only the profile owner can approve CMs and manage inbox invitations."},403);
         if(d.mode==='revoke'){await db.prepare("DELETE FROM project_team WHERE project_id=? AND cm_id=?").bind(d.projectId,d.cmId).run();return json({id:d.projectId})}
         await db.prepare("INSERT INTO project_team (project_id,cm_id,status,created_at) VALUES (?,?,'invited',?) ON CONFLICT(project_id,cm_id) DO UPDATE SET status='invited',created_at=excluded.created_at WHERE project_team.status='declined'").bind(d.projectId,d.cmId,now).run();
       }else{
@@ -46,7 +46,7 @@ export async function POST(request:Request){
     }
     if(body.action==='read'){
       const input=readInput.safeParse(body.data);if(!input.success)return json({error:"Invalid request."},400);
-      const access=await db.prepare("SELECT r.id FROM collaborations r JOIN communities s ON s.id=r.source_id JOIN communities t ON t.id=r.target_id WHERE r.id=? AND (s.owner_id=? OR t.owner_id=? OR EXISTS (SELECT 1 FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=t.id AND t.kind='Project' AND pt.status='accepted' AND cm.owner_id=? AND (r.assigned_cm_id IS NULL OR r.assigned_cm_id=cm.id)))").bind(input.data.id,user.userId,user.userId,user.userId).first();
+      const access=await db.prepare("SELECT r.id FROM collaborations r JOIN communities s ON s.id=r.source_id JOIN communities t ON t.id=r.target_id WHERE r.id=? AND (s.owner_id=? OR t.owner_id=? OR EXISTS (SELECT 1 FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=t.id AND t.kind IN ('Project','Community') AND pt.status='accepted' AND cm.owner_id=? AND (r.assigned_cm_id IS NULL OR r.assigned_cm_id=cm.id)))").bind(input.data.id,user.userId,user.userId,user.userId).first();
       if(!access)return json({error:"Request not found."},404);
       await db.prepare("INSERT INTO request_reads (request_id,user_id,seen_at) VALUES (?,?,?) ON CONFLICT(request_id,user_id) DO UPDATE SET seen_at=excluded.seen_at").bind(input.data.id,user.userId,now).run();return json({id:input.data.id});
     }
@@ -63,7 +63,7 @@ export async function POST(request:Request){
     if(body.action==="community"){
       const input=communityInput.safeParse(body.data);if(!input.success)return json({error:input.error.issues[0].message},400);
       const d=input.data;
-      const cmIds=d.kind==="Project"?[...new Set(d.projectCMIds)]:[];
+      const cmIds=d.kind!=="CM"?[...new Set(d.projectCMIds)]:[];
       for(const cmId of cmIds){const cm=await db.prepare("SELECT kind FROM communities WHERE id=?").bind(cmId).first<{kind:string}>();if(cm?.kind!=="CM")return json({error:"Choose an existing CM profile."},400);}
       const saveCMs=async(projectId:string)=>{await db.batch([db.prepare("DELETE FROM project_cm_contacts WHERE project_id=?").bind(projectId),...cmIds.map(cmId=>db.prepare("INSERT INTO project_cm_contacts (project_id,cm_id) VALUES (?,?)").bind(projectId,cmId))])};
       if(d.kind==="Project"&&d.spotsListed&&d.spotsDeadline<now.slice(0,10))return json({error:"Choose today or a future spot deadline."},400);
@@ -105,7 +105,7 @@ export async function POST(request:Request){
       if(!source||source.owner_id!==user.userId)return json({error:"Choose a profile you manage."},403);
       if(!target||!target.open)return json({error:"This profile is not accepting requests."},400);
       if(target.kind==="Project"&&d.kind==="Whitelist spots"&&!target.handles_spots)return json({error:"This project contact has not listed whitelist allocations as their responsibility."},400);
-      if(d.kind==="Hire CM"&&(source.kind!=="Project"||target.kind!=="CM"||target.availability==="Busy"))return json({error:"A project can approach an available CM."},400);
+      if(d.kind==="Hire CM"&&(!["Project","Community"].includes(source.kind)||target.kind!=="CM"||target.availability==="Busy"))return json({error:"A project or community can approach an available CM."},400);
       if(d.kind==="CM application"&&(source.kind!=="CM"||target.kind!=="Project"||!target.hiring))return json({error:"Choose your CM profile and a project currently hiring."},400);
       if(d.kind==="Whitelist spots"&&target.kind==="CM")return json({error:"Choose a project to request its allocation."},400);
       if(d.kind==="Whitelist spots"&&target.spots_listed){
@@ -114,7 +114,7 @@ export async function POST(request:Request){
       }
       if(d.assignedCMId){
         const contact=await db.prepare("SELECT pt.cm_id FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=? AND pt.cm_id=? AND pt.status='accepted'").bind(d.targetId,d.assignedCMId).first();
-        if(target.kind!=='Project'||!contact)return json({error:"Choose a CM who has accepted this project’s invitation."},400);
+        if(!['Project','Community'].includes(target.kind)||!contact)return json({error:"Choose a CM who has accepted this team’s invitation."},400);
       }
       if(d.sourceId===d.targetId)return json({error:"Choose a different partner."},400);
       const id=crypto.randomUUID();
@@ -126,12 +126,12 @@ export async function POST(request:Request){
       const d=input.data;
       const row=await db.prepare(`SELECT r.*,s.owner_id AS sender,t.owner_id AS recipient FROM collaborations r JOIN communities s ON s.id=r.source_id JOIN communities t ON t.id=r.target_id WHERE r.id=?`).bind(d.id).first<{sender:string,recipient:string,status:string,spots:number,kind:string,target_id:string,assigned_cm_id:string|null}>();
       if(!row)return json({error:"Request not found."},404);
-      const delegated=await db.prepare("SELECT pt.cm_id FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' JOIN communities p ON p.id=pt.project_id AND p.kind='Project' WHERE pt.project_id=? AND pt.status='accepted' AND cm.owner_id=? AND (? IS NULL OR pt.cm_id=?)").bind(row.target_id,user.userId,row.assigned_cm_id,row.assigned_cm_id).first();
+      const delegated=await db.prepare("SELECT pt.cm_id FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' JOIN communities p ON p.id=pt.project_id AND p.kind IN ('Project','Community') WHERE pt.project_id=? AND pt.status='accepted' AND cm.owner_id=? AND (? IS NULL OR pt.cm_id=?)").bind(row.target_id,user.userId,row.assigned_cm_id,row.assigned_cm_id).first();
       if(d.status==="cancelled"?row.sender!==user.userId:row.recipient!==user.userId&&!delegated)return json({error:"You cannot update this request."},403);
       if(d.status==="completed"?row.status!=="accepted":d.status==="discussing"?row.status!=="pending":!["pending","discussing"].includes(row.status))return json({error:"This request has already changed. Refresh and try again."},409);
       const approved=d.status==="accepted"?(d.approvedSpots??row.spots):0;
       if(d.status==="accepted"&&row.kind==="Whitelist spots"&&(approved<1||approved>row.spots))return json({error:"Approved spots must be between 1 and the requested amount."},400);
-      const result=await db.prepare("UPDATE collaborations SET status=?, updated_at=?, approved_spots=CASE WHEN ?='accepted' THEN ? ELSE approved_spots END WHERE id=? AND status=? AND (CASE WHEN ?='cancelled' THEN EXISTS (SELECT 1 FROM communities s WHERE s.id=collaborations.source_id AND s.owner_id=?) ELSE EXISTS (SELECT 1 FROM communities t WHERE t.id=collaborations.target_id AND (t.owner_id=? OR (t.kind='Project' AND EXISTS (SELECT 1 FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=t.id AND pt.status='accepted' AND cm.owner_id=? AND (collaborations.assigned_cm_id IS NULL OR collaborations.assigned_cm_id=cm.id))))) END) AND (?!='accepted' OR kind!='Whitelist spots' OR NOT EXISTS (SELECT 1 FROM communities c WHERE c.id=collaborations.target_id AND c.spots_listed=1 AND (? + COALESCE((SELECT SUM(other.approved_spots) FROM collaborations other WHERE other.target_id=c.id AND other.kind='Whitelist spots' AND other.status IN ('accepted','completed')),0)>c.available_spots OR c.spots_deadline<?)))")
+      const result=await db.prepare("UPDATE collaborations SET status=?, updated_at=?, approved_spots=CASE WHEN ?='accepted' THEN ? ELSE approved_spots END WHERE id=? AND status=? AND (CASE WHEN ?='cancelled' THEN EXISTS (SELECT 1 FROM communities s WHERE s.id=collaborations.source_id AND s.owner_id=?) ELSE EXISTS (SELECT 1 FROM communities t WHERE t.id=collaborations.target_id AND (t.owner_id=? OR (t.kind IN ('Project','Community') AND EXISTS (SELECT 1 FROM project_team pt JOIN communities cm ON cm.id=pt.cm_id AND cm.kind='CM' WHERE pt.project_id=t.id AND pt.status='accepted' AND cm.owner_id=? AND (collaborations.assigned_cm_id IS NULL OR collaborations.assigned_cm_id=cm.id))))) END) AND (?!='accepted' OR kind!='Whitelist spots' OR NOT EXISTS (SELECT 1 FROM communities c WHERE c.id=collaborations.target_id AND c.spots_listed=1 AND (? + COALESCE((SELECT SUM(other.approved_spots) FROM collaborations other WHERE other.target_id=c.id AND other.kind='Whitelist spots' AND other.status IN ('accepted','completed')),0)>c.available_spots OR c.spots_deadline<?)))")
         .bind(d.status,now,d.status,approved,d.id,row.status,d.status,user.userId,user.userId,user.userId,d.status,approved,now.slice(0,10)).run();
       if(!result.meta.changes)return json({error:"This request or its available allocation has changed. Refresh and try again."},409);
       return json({id:d.id,status:d.status});

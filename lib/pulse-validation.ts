@@ -6,7 +6,7 @@ export const communityInput=z.object({
   description:z.string().trim().min(10).max(600),representative:z.string().trim().min(2).max(80),
   role:z.enum(["Community manager","Collab manager","Founder","Partnerships lead"]),
   handle:z.string().trim().regex(/^(?:@?[A-Za-z0-9_]{1,15})?$/, "Enter an X handle, without a URL."),officialUrl:z.union([webUrl,z.literal("")]),open:z.boolean(),
-  projectCategory:z.enum(["NFT","Gaming","DeFi","Infrastructure","Other"]).default("Other"),
+  projectCategory:z.enum(["NFT","Meme","Gaming","DeFi","Infrastructure","Other"]).default("Other"),
   handlesSpots:z.boolean().default(false),
   projectCMIds:z.array(z.string().uuid()).max(10).default([]),
   managerProfileId:z.union([z.string().uuid(),z.literal("")]).default(""),

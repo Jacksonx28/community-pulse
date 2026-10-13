@@ -344,3 +344,7 @@ body{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe
 
 .managed-card .card-artwork{height:96px;aspect-ratio:auto}
 @media(max-width:900px){.managed-card .card-artwork{margin:-20px -18px 30px}}
+
+/* Keep allocation and hiring controls visually separate. */
+.opportunities-settings>.switch-label{margin-top:20px;margin-bottom:14px;min-height:32px}
+.opportunities-settings>.contact-settings{margin-bottom:24px}
