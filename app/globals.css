@@ -271,3 +271,23 @@ body{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe
 @media(min-width:1100px){.discover-surface .community-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:761px) and (max-width:1099px){.discover-surface .community-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.discover-surface .community-grid{grid-template-columns:minmax(0,1fr)}.discovery-card .card-artwork,.project-contact-card .card-artwork{height:96px}}
+
+/* A friendly, accessible sign-out confirmation and farewell. */
+.farewell-shell{min-height:100dvh;background:var(--background);color:var(--foreground);padding:32px 24px 48px}
+.farewell-wrap{max-width:640px;margin:0 auto}
+.farewell-brand{display:inline-flex;align-items:center;gap:10px;color:var(--foreground);font-size:19px;font-weight:750;letter-spacing:-.5px;margin-bottom:28px}
+.farewell-brand svg{width:38px;height:38px;color:#3559f4}
+.farewell-art{display:block;width:100%;height:auto;border-radius:20px}
+.farewell-message{text-align:center;padding:30px 12px 0}
+.farewell-eyebrow{text-transform:uppercase;font-size:11px;font-weight:650;letter-spacing:1.8px;color:var(--muted-foreground)}
+.farewell-message h1{font-size:clamp(36px,6vw,52px);font-weight:800;letter-spacing:-1.8px;line-height:1.1;color:var(--foreground);margin:12px 0 16px;text-wrap:balance}
+.farewell-message h1 em{font-family:Georgia,serif;font-weight:700;color:#2449e8}
+.farewell-message>p:not(.farewell-eyebrow){max-width:420px;margin:0 auto;font-size:16px;line-height:1.7;color:var(--muted-foreground)}
+.farewell-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin:24px 0 20px}
+.farewell-actions .primary-btn,.farewell-actions .secondary-btn{min-height:48px;min-width:160px}
+.farewell-message .farewell-footnote{font-size:12px!important}
+.farewell-message .farewell-error{color:var(--destructive)!important;margin-top:14px!important}
+.dark .farewell-message h1,.dark .farewell-brand{color:#edf2ff}
+.dark .farewell-message h1 em,.dark .farewell-brand svg{color:#a3b8ff}
+@media(prefers-reduced-motion:no-preference){.farewell-wave{transform-origin:242px 180px;animation:farewell-wave 2.8s ease-in-out 3}@keyframes farewell-wave{0%,40%,100%{transform:rotate(0)}10%,30%{transform:rotate(7deg)}20%{transform:rotate(-5deg)}}}
+@media(max-width:500px){.farewell-shell{padding:24px 18px 36px}.farewell-brand{margin-bottom:22px}.farewell-message{padding:24px 0 0}.farewell-actions{display:grid;grid-template-columns:1fr}.farewell-actions .primary-btn,.farewell-actions .secondary-btn,.farewell-actions form{width:100%}}

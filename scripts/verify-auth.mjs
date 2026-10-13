@@ -8,7 +8,7 @@ const server=module('lib/supabase/server.ts',{'@supabase/ssr':{createServerClien
 for(const value of ['https://evil.test','//evil.test','/\\evil.test','/auth/start','/login','javascript:alert(1)'])assert.equal(server.safeReturnTo(value),'/');
 assert.equal(server.safeReturnTo('/?view=inbox'),'/?view=inbox');
 const supabase={auth:{signInWithOAuth:async ({provider})=>({data:{url:'https://provider.test/'+provider},error:null}),exchangeCodeForSession:async()=>{exchangeCount++;return {error:exchangeError}},getUser:async()=>({data:{user:{id:'verified-id',email:'person@example.test',user_metadata:{name:'Person'},app_metadata:{provider:'google'}}},error:null})}};
-const imports={'@/lib/supabase/server':{...server,authConfig:()=>config,authClient:async()=>supabase},'next/server':{NextResponse:{redirect:(url)=>new Response(null,{status:307,headers:{location:String(url)}})}}};
+const imports={'@/lib/supabase/server':{...server,authConfig:()=>config,authClient:async()=>supabase},'next/server':{NextResponse:{redirect:(url,status=307)=>new Response(null,{status,headers:{location:String(url)}})}}};
 const start=module('app/auth/start/route.ts',imports);
 assert.equal((await start.GET(new Request('https://pulse.test/auth/start?provider=google'))).headers.get('location'),'https://provider.test/google');
 assert.equal((await start.GET(new Request('https://pulse.test/auth/start?provider=x'))).headers.get('location'),'https://provider.test/x');
@@ -22,4 +22,13 @@ const auth=module('lib/auth.ts',{'./supabase/server':imports['@/lib/supabase/ser
 assert.equal((await auth.getUser()).userId,'verified-id');
 supabase.auth.getUser=async()=>({data:{user:null},error:{message:'invalid token'}});assert.equal(await auth.getUser(),null);
 const logout=module('app/auth/logout/route.ts',imports);assert.equal((await logout.POST(new Request('https://pulse.test/auth/logout',{method:'POST',headers:{origin:'https://evil.test'}}))).status,403);
+let logoutCalls=0,logoutError=null;
+supabase.auth.signOut=async({scope})=>{assert.equal(scope,'local');logoutCalls++;return {error:logoutError}};
+const confirm=await logout.GET(new Request('https://pulse.test/auth/logout'));
+assert.equal(confirm.headers.get('location'),'https://pulse.test/signout');assert.equal(logoutCalls,0,'Opening confirmation must not sign out');
+const signedOut=await logout.POST(new Request('https://pulse.test/auth/logout',{method:'POST',headers:{origin:'https://pulse.test'}}));
+assert.equal(signedOut.status,303);assert.equal(signedOut.headers.get('location'),'https://pulse.test/signed-out');assert.equal(logoutCalls,1);
+assert.equal(signedOut.headers.get('cache-control'),'private, no-store');
+logoutError={message:'Sign-out rejected'};
+assert.equal((await logout.POST(new Request('https://pulse.test/auth/logout',{method:'POST',headers:{origin:'https://pulse.test'}}))).headers.get('location'),'https://pulse.test/signout?error=failed');
 console.log('Passed: OAuth provider gating, code exchange failures, safe redirects, verified identity, rejected invalid sessions, and logout origin checks.');

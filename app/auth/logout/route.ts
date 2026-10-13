@@ -1,13 +1,19 @@
 import { authClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
+function redirect(path:string,origin:string){
+ const response=NextResponse.redirect(new URL(path,origin),303);
+ response.headers.set("Cache-Control","private, no-store");
+ return response;
+}
 export async function POST(request: Request) {
-  const url = new URL(request.url);
-  if (request.headers.get("origin") !== url.origin) return new Response("Invalid origin", { status: 403 });
-  try { const client = await authClient(); await client.auth.signOut({ scope: "local" }); }
-  catch { return new Response("Sign-out failed. Please try again.", { status: 503 }); }
-  return NextResponse.redirect(new URL("/login", url.origin), 303);
+ const url=new URL(request.url);
+ if(request.headers.get("origin")!==url.origin)return new Response("Invalid origin",{status:403});
+ try {
+  const client=await authClient();
+  const {error}=await client.auth.signOut({scope:"local"});
+  if(error)return redirect("/signout?error=failed",url.origin);
+ }catch{return redirect("/signout?error=failed",url.origin)}
+ return redirect("/signed-out",url.origin);
 }
-export async function GET() {
-  return new Response('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign out</title></head><body style="font-family:system-ui;padding:2rem"><h1>Sign out of Community Pulse?</h1><form method="post"><button type="submit">Sign out</button></form><p><a href="/">Stay signed in</a></p></body></html>', { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
-}
+export async function GET(request:Request){return redirect("/signout",new URL(request.url).origin)}
