@@ -173,7 +173,7 @@ const legacyRequest=(await (await route.GET()).json()).requests.find(r=>r.id===r
 for(const ecosystem of ["Robinhood Chain","Arc","Sui"]){assert.equal((await post("community",{...profile("New ecosystem DAO"),ecosystem})).status,201)}
 for(const ecosystem of ["Berachain","Abstract"]){assert.equal((await post("community",{...profile("Removed ecosystem DAO"),ecosystem})).status,400)}
 const support=module("lib/support-answers.ts",{});
-assert.match(support.supportAnswer("What does Submit request do?").text,/Nothing reaches a real CM/);
+assert.match(support.supportAnswer("What does Submit request do?").text,/recipient’s Collaborations inbox/);
 assert.match(support.supportAnswer("Can I sign in with Google?").text,/provider is enabled/);
 assert.match(support.supportAnswer("Is this help bot free?").text,/does not call a paid AI service/);
 assert.match(support.supportAnswer("Discord or Telegram community?").text,/does not send the request/);
