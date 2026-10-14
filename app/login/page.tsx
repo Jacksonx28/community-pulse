@@ -1,12 +1,13 @@
 import { authConfig, safeReturnTo } from "@/lib/supabase/server";
 import { BrandMark } from "../brand";
+import LoginTransition from "../login-transition";
 export const dynamic = "force-dynamic";
 export default async function Login({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
   const config = authConfig();
   const ready = !!config.url && !!config.key;
   const next = encodeURIComponent(safeReturnTo(params.next));
-  return <main className="login-shell">
+  return <LoginTransition><main className="login-shell">
     <div className="login-art" aria-hidden="true"><img src="/community-splash.webp" alt="" width={2172} height={724}/></div>
     <section className="login-panel">
       <a className="login-brand" href="/"><BrandMark/> Community Pulse</a>
@@ -29,5 +30,5 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
         </div>
       </div>
     </section>
-  </main>;
+  </main></LoginTransition>;
 }

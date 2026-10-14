@@ -13,7 +13,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "deploy": "node scripts/deploy-cloudflare.mjs",
-    "verify": "node scripts/verify-pulse.mjs && node scripts/verify-auth.mjs"
+    "verify": "node scripts/verify-pulse.mjs && node scripts/verify-auth.mjs && node scripts/verify-onboarding.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

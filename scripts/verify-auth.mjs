@@ -3,11 +3,11 @@ import { strict as assert } from 'node:assert';
 import ts from 'typescript';
 function module(path,imports){const out={};const code=ts.transpileModule(readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports',code)(name=>{if(!(name in imports))throw Error(`Unexpected import: ${name}`);return imports[name]},out);return out}
 const config={url:'https://auth.example.test',key:'test-publishable-key',google:true,x:true};
-let exchangeCount=0,exchangeError=null;
+let exchangeCount=0,exchangeError=null,oauthOptions=null;
 const server=module('lib/supabase/server.ts',{'@supabase/ssr':{createServerClient:()=>({})},'next/headers':{cookies:async()=>({getAll:()=>[],set:()=>{}})},'cloudflare:workers':{env:{}}});
 for(const value of ['https://evil.test','//evil.test','/\\evil.test','/auth/start','/login','javascript:alert(1)'])assert.equal(server.safeReturnTo(value),'/');
 assert.equal(server.safeReturnTo('/?view=inbox'),'/?view=inbox');
-const supabase={auth:{signInWithOAuth:async ({provider})=>({data:{url:'https://provider.test/'+provider},error:null}),exchangeCodeForSession:async()=>{exchangeCount++;return {error:exchangeError}},getUser:async()=>({data:{user:{id:'verified-id',email:'person@example.test',user_metadata:{name:'Person'},app_metadata:{provider:'google'}}},error:null})}};
+const supabase={auth:{signInWithOAuth:async ({provider,options})=>{oauthOptions=options;return {data:{url:'https://provider.test/'+provider},error:null}},exchangeCodeForSession:async()=>{exchangeCount++;return {error:exchangeError}},getUser:async()=>({data:{user:{id:'verified-id',email:'person@example.test',user_metadata:{name:'Person'},app_metadata:{provider:'google'}}},error:null})}};
 const imports={'@/lib/supabase/server':{...server,authConfig:()=>config,authClient:async()=>supabase},'next/server':{NextResponse:{redirect:(url,status=307)=>new Response(null,{status,headers:{location:String(url)}})}}};
 const start=module('app/auth/start/route.ts',imports);
 assert.equal((await start.GET(new Request('https://pulse.test/auth/start?provider=google'))).headers.get('location'),'https://provider.test/google');
@@ -17,6 +17,13 @@ assert.match((await start.GET(new Request('https://pulse.test/auth/start?provide
 const callback=module('app/auth/callback/route.ts',imports);
 assert.match((await callback.GET(new Request('https://pulse.test/auth/callback'))).headers.get('location'),/error=callback/);assert.equal(exchangeCount,0);
 assert.equal((await callback.GET(new Request('https://pulse.test/auth/callback?code=valid&next=https://evil.test'))).headers.get('location'),'https://pulse.test/');
+for(const kind of ['Community','Project','CM']){
+ const destination=`/?view=profiles&create=${kind}`;
+ await start.GET(new Request('https://pulse.test/auth/start?provider=google&next='+encodeURIComponent(destination)));
+ assert.equal(new URL(oauthOptions.redirectTo).searchParams.get('next'),destination,'OAuth preserves the chosen setup role');
+ const result=await callback.GET(new Request('https://pulse.test/auth/callback?code=valid&next='+encodeURIComponent(destination)));
+ assert.equal(result.headers.get('location'),'https://pulse.test'+destination);
+}
 exchangeError={message:'invalid code'};assert.match((await callback.GET(new Request('https://pulse.test/auth/callback?code=invalid'))).headers.get('location'),/error=callback/);
 const auth=module('lib/auth.ts',{'./supabase/server':imports['@/lib/supabase/server'],'next/navigation':{redirect:()=>{throw Error('redirect')}}});
 assert.equal((await auth.getUser()).userId,'verified-id');
