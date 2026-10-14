@@ -181,8 +181,8 @@ body{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe
 
 /* The panoramic splash is shown in full, above the sign-in content. */
 .login-shell{min-height:100dvh;background:var(--background);color:var(--foreground)}
-.login-art{width:100%;background:#fff58a;border-bottom:1px solid var(--border)}
-.login-art img{display:block;width:100%;height:auto;max-height:32dvh;object-fit:contain}
+.login-art{width:100%;background:#fff58a;border:0}
+.login-art img{display:block;width:100%;height:auto;max-height:32dvh;object-fit:cover;object-position:center}
 .login-panel{width:100%;max-width:1140px;margin:auto;padding:32px 48px 48px}
 .login-brand{display:inline-flex;align-items:center;gap:12px;font-size:19px;font-weight:750;letter-spacing:-.5px;color:var(--foreground)}
 .login-brand svg{width:40px;height:40px;color:#3559f4}
@@ -376,7 +376,7 @@ html{color-scheme:light}
 .brand-loading-track{display:block;width:105px;height:3px;margin:24px auto 0;background:#e2e7f8;border-radius:2px;overflow:hidden}
 .brand-loading-track:after{content:"";display:block;width:40%;height:100%;background:#3854f5;animation:pulse-brand-track 1.25s ease-in-out infinite}
 .login-transition-overlay{position:fixed;inset:0;z-index:100;background:#f8f9fe;overflow:auto}
-.login-art{position:relative}.login-art:after{content:"";position:absolute;left:0;right:0;bottom:0;height:18px;background:linear-gradient(transparent,var(--background));pointer-events:none}
+.login-art{position:relative}
 .login-content{animation:pulse-welcome-enter .35s ease-out both}
 .welcome-start{min-height:100dvh;background:#f8f9fe;color:#0f192e;color-scheme:only light}
 .welcome-start-header{padding:28px 40px;border-bottom:1px solid #dce2f0}
