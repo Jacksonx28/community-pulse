@@ -17,6 +17,7 @@ export const communities = sqliteTable("communities", {
   currentProjects: text("current_projects").notNull().default(''),
   contactRoute: text("contact_route").notNull().default('CM'),
   spotsListed: integer("spots_listed").notNull().default(0),
+  showAllocations: integer("show_allocations").notNull().default(1),
   availableSpots: integer("available_spots").notNull().default(0),
   spotsDeadline: text("spots_deadline").notNull().default(''),
   eligibility: text("eligibility").notNull().default(''),

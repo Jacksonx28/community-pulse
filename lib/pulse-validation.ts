@@ -18,6 +18,7 @@ export const communityInput=z.object({
   availability:z.enum(["Available for hire","Open to more projects","Busy"]).default("Available for hire"),
   currentProjects:z.string().trim().max(400).default(""),
   contactRoute:z.enum(["CM","Project team"]).default("CM"),
+  showAllocations:z.boolean().default(true),
   spotsListed:z.boolean().default(false),availableSpots:z.number().int().min(0).max(1000000).default(0),
   spotsDeadline:z.string().regex(/^(?:\d{4}-\d{2}-\d{2})?$/).default(""),eligibility:z.string().trim().max(600).default(""),
   hiring:z.boolean().default(false),hiringDetails:z.string().trim().max(600).default(""),compensation:z.string().trim().max(200).default(""),

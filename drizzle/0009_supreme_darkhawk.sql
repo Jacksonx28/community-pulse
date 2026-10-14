@@ -1,0 +1,1 @@
+ALTER TABLE `communities` ADD `show_allocations` integer DEFAULT 1 NOT NULL;
