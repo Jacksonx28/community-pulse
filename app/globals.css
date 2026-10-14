@@ -400,3 +400,12 @@ html{color-scheme:light}
 @keyframes pulse-welcome-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:650px){.welcome-start-header{padding:22px}.welcome-start-content{padding:30px 23px}.welcome-start h1{font-size:29px}}
 @media(prefers-reduced-motion:reduce){.brand-loading-mark,.brand-loading-track:after,.welcome-start-content,.login-content{animation:none}.welcome-role{transition:none}}
+
+/* Explicit compact desktop grids and status colours above the card overlay styling. */
+@media(min-width:1024px){.discover-surface .community-grid,.discover-surface .community-grid.contact-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:761px) and (max-width:1023px){.discover-surface .community-grid,.discover-surface .community-grid.contact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.discover-surface .community-grid,.discover-surface .community-grid.contact-grid{grid-template-columns:minmax(0,1fr)}}
+.discover-surface .community-card .card-top .profile-status.affiliation-approved{background:#e7f5ec;color:#21603b;border-color:#c5e3cf}
+.discover-surface .community-card .card-top .profile-status.affiliation-reported{background:#eef1f6;color:#4b5870;border-color:#dce2ec}
+.trust-explainer .affiliation-reported{background:#eef1f6;color:#4b5870;border:1px solid #dce2ec}
+.trust-explainer .affiliation-approved{background:#e7f5ec;color:#21603b;border:1px solid #c5e3cf}
