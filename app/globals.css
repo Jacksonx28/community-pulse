@@ -409,3 +409,17 @@ html{color-scheme:light}
 .discover-surface .community-card .card-top .profile-status.affiliation-reported{background:#eef1f6;color:#4b5870;border-color:#dce2ec}
 .trust-explainer .affiliation-reported{background:#eef1f6;color:#4b5870;border:1px solid #dce2ec}
 .trust-explainer .affiliation-approved{background:#e7f5ec;color:#21603b;border:1px solid #c5e3cf}
+
+/* Keep dismiss controls outside every overlay's scrolling content. */
+.overlay-dialog[data-slot=dialog-content]{display:flex!important;flex-direction:column;gap:0!important;padding:0!important;overflow:hidden!important;max-height:calc(100dvh - 32px)}
+.overlay-sheet[data-slot=sheet-content]{gap:0!important;padding:0!important;overflow:hidden!important}
+.overlay-close-bar{flex:0 0 auto;display:flex;align-items:center;position:relative;z-index:5;padding:8px 14px;background:#fff;border-bottom:1px solid #dce2ed;color:#142037}
+.overlay-close-bar .overlay-close-button{position:static;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:88px;min-height:44px;padding:10px 12px;border:1px solid #dce2ed;border-radius:7px;background:#f7f8fc;color:#142037;opacity:1;font-size:14px;font-weight:600;line-height:1.4;flex-shrink:0}
+.overlay-close-bar .overlay-close-button:hover{background:#edf1fa;border-color:#bac6dd}
+.overlay-close-bar .overlay-close-button svg{width:20px;height:20px;pointer-events:none}
+.overlay-dialog-body{flex:1 1 auto;min-height:0;display:grid;gap:16px;overflow-y:auto;overscroll-behavior:contain;padding:24px;scroll-padding-top:20px}
+.overlay-sheet-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;scroll-padding-top:20px}
+.support-sheet .overlay-sheet-body{padding:24px;gap:16px;overflow:hidden}
+.profile-sheet .overlay-sheet-body{gap:0}
+.profile-sheet .overlay-sheet-body>*{flex-shrink:0}
+@media(max-width:600px){.overlay-dialog[data-slot=dialog-content]{max-height:calc(100dvh - 24px)}.overlay-dialog-body{padding:20px}.overlay-sheet>.overlay-close-bar{padding-top:calc(8px + env(safe-area-inset-top))}.support-sheet .overlay-sheet-body{padding:20px}}
