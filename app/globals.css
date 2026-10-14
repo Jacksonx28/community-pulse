@@ -423,3 +423,17 @@ html{color-scheme:light}
 .profile-sheet .overlay-sheet-body{gap:0}
 .profile-sheet .overlay-sheet-body>*{flex-shrink:0}
 @media(max-width:600px){.overlay-dialog[data-slot=dialog-content]{max-height:calc(100dvh - 24px)}.overlay-dialog-body{padding:20px}.overlay-sheet>.overlay-close-bar{padding-top:calc(8px + env(safe-area-inset-top))}.support-sheet .overlay-sheet-body{padding:20px}}
+
+.collaboration-count{display:block;color:#52627b;font-size:12px;line-height:1.6;margin:8px 0;white-space:normal}
+.profile-sheet .collaboration-count{margin:0}
+.completion-panel{border:1px solid #dce2ed;background:#f7f9fd;padding:18px;border-radius:8px;display:grid;gap:12px}
+.completion-panel h3{display:flex;gap:8px;align-items:center;line-height:1.5;font-size:16px;color:#142037;margin:0}
+.completion-panel p,.completion-panel small{font-size:14px;line-height:1.7;color:#52627b}
+.completion-panel small{font-size:12px}
+.completion-panel.confirmed{background:#eef8f1;border-color:#c5e3cf}
+.completion-panel.confirmed h3{color:#21603b}
+.completion-actions{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:600px){.completion-actions{display:grid}.completion-actions button{width:100%}}
+
+.request-item>.status-pill{white-space:normal;text-align:center;max-width:150px;flex-shrink:0}
+@media(max-width:600px){.request-item>.status-pill{max-width:104px;font-size:11px}}

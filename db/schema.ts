@@ -28,6 +28,12 @@ export const communities = sqliteTable("communities", {
   discordUserId: text("discord_user_id").notNull().default(""),
 }, t=>[index("communities_owner_idx").on(t.ownerId)]);
 export const collaborations = sqliteTable("collaborations", {
+  completionRequestedBy: text("completion_requested_by").notNull().default(""),
+  completionRequestedSide: text("completion_requested_side").notNull().default(""),
+  completionRequestedAt: text("completion_requested_at").notNull().default(""),
+  completionConfirmedAt: text("completion_confirmed_at").notNull().default(""),
+  completionVersion: integer("completion_version").notNull().default(0),
+  creditedCMId: text("credited_cm_id").references(()=>communities.id),
   assignedCMId: text("assigned_cm_id").references(()=>communities.id),
   updatedAt: text("updated_at").notNull().default(""),
   id: text("id").primaryKey(), sourceId: text("source_id").notNull().references(()=>communities.id),
@@ -35,7 +41,7 @@ export const collaborations = sqliteTable("collaborations", {
   communityPlatform: text("community_platform").notNull().default("Not specified"),
   kind: text("kind").notNull(), spots: integer("spots").notNull(), approvedSpots: integer("approved_spots").notNull().default(0),
   deadline: text("deadline").notNull(), message: text("message").notNull(), status: text("status").notNull().default("pending"), createdAt: text("created_at").notNull(),
-}, t=>[index("collaborations_source_idx").on(t.sourceId),index("collaborations_target_idx").on(t.targetId)]);
+}, t=>[index("collaborations_source_idx").on(t.sourceId),index("collaborations_target_idx").on(t.targetId),index("collaborations_credit_idx").on(t.creditedCMId)]);
 
 export const projectCMContacts=sqliteTable("project_cm_contacts",{
  projectId:text("project_id").notNull().references(()=>communities.id),

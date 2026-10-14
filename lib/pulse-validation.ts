@@ -33,8 +33,10 @@ export const requestInput=z.object({communityPlatform:z.enum(["Discord","Telegra
   kind:z.enum(["Whitelist spots","Joint Space","Campaign","Partnership","Hire CM","CM application"]),spots:z.number().int().min(0).max(10000),
   deadline:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(x=>!Number.isNaN(Date.parse(x))),message:z.string().trim().min(10).max(1500),
 }).strict().refine(x=>x.kind==="Whitelist spots"?x.spots>0:x.spots===0,{message:"Request at least one whitelist spot; other request types must have zero spots."});
-export const responseInput=z.object({id:z.string().uuid(),status:z.enum(["discussing","accepted","declined","cancelled","completed"]),approvedSpots:z.number().int().min(0).max(10000).optional()}).strict();
+export const responseInput=z.object({id:z.string().uuid(),status:z.enum(["discussing","accepted","declined","cancelled"]),approvedSpots:z.number().int().min(0).max(10000).optional()}).strict();
 export const teamInput=z.object({projectId:z.string().uuid(),cmId:z.string().uuid(),mode:z.enum(["invite","accept","decline","revoke"])}).strict();
 export const readInput=z.object({id:z.string().uuid()}).strict();
 export const reportInput=z.object({profileId:z.string().uuid(),kind:z.enum(["Incorrect contact","Claim profile"]),message:z.string().trim().min(20).max(1000)}).strict();
 export const reviewInput=z.object({id:z.string().uuid(),status:z.enum(["reviewed","dismissed"])}).strict();
+
+export const completionInput=z.object({id:z.string().uuid(),mode:z.enum(["request","confirm","ongoing"]),version:z.number().int().min(0)}).strict();
