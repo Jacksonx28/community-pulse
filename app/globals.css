@@ -437,3 +437,14 @@ html{color-scheme:light}
 
 .request-item>.status-pill{white-space:normal;text-align:center;max-width:150px;flex-shrink:0}
 @media(max-width:600px){.request-item>.status-pill{max-width:104px;font-size:11px}}
+
+/* Managed profiles use the same responsive spread as Discover. */
+.profiles-grid{max-width:none;width:100%;gap:18px}
+.profiles-grid .managed-card{padding:18px 18px 0}
+.profiles-grid .managed-card .card-artwork{height:88px;margin:-18px -18px 24px;aspect-ratio:auto}
+.profiles-grid .managed-card .card-title{font-size:20px;line-height:1.3}
+.profiles-grid .managed-card .card-description{font-size:14px;line-height:1.6;min-height:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-bottom:16px}
+.profiles-grid .managed-card .representative-row{margin-top:12px;margin-bottom:12px}
+@media(min-width:1024px){.community-grid.profiles-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:761px) and (max-width:1023px){.community-grid.profiles-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.community-grid.profiles-grid{grid-template-columns:minmax(0,1fr)}}
