@@ -509,3 +509,11 @@ html{color-scheme:light}
 @media(max-width:600px){.account-photo-editor{gap:14px}.account-save-row{flex-direction:column;align-items:stretch;gap:16px}.account-save-row>small{max-width:none}.account-page-card .account-photo-actions .secondary-btn{align-self:auto;width:auto}.account-settings .settings-section-heading{margin-bottom:20px}}
 .account-page-card .account-settings .account-save-row .primary-btn{width:auto;align-self:center}
 @media(max-width:600px){.account-page-card .account-settings .account-save-row .primary-btn{width:100%;align-self:stretch}}
+/* Readability through spacing, with restrained type weight. */
+.account-settings .settings-section-heading h2{font-size:17px;font-weight:500;letter-spacing:-.01em}
+.account-photo-controls>strong{font-weight:500}
+.account-identity-fields>label{font-weight:400;gap:9px}
+.account-identity-fields{gap:26px}
+.account-settings .account-access-link strong{font-weight:500}
+.account-settings .settings-section-heading{margin-bottom:26px}
+.account-settings .settings-section-heading p{margin-top:6px}
