@@ -18,7 +18,7 @@ export default function ProjectContacts({profiles,loading,onAdd,onView,onRequest
  const [showFilters,setShowFilters]=useState(false);
  const [selection,setSelection]=useState<Record<string,string>>({});
  const [query,setQuery]=useURLState<string>("q","");const [ecosystem,setEcosystem]=useURLState<string>("ecosystem","All ecosystems");const [role,setRole]=useURLState<string>("role","All roles");const [category,setCategory]=useURLState<string>("category","All project types");const [allocations,setAllocations]=useURLState<string>("allocations","");const [open,setOpen]=useURLState<string>("open","");const allocationsOnly=allocations==="1";const openOnly=open==="1";const setAllocationsOnly=(v:boolean)=>setAllocations(v?"1":"");const setOpenOnly=(v:boolean)=>setOpen(v?"1":"");
- const contacts=filterProjectContacts(profiles.map(p=>({...p,search_contacts:profiles.filter(c=>p.approved_cm_ids?.includes(c.id)).map(c=>`${c.name} ${c.handle} ${c.username||""} @${c.username||""}`).join(" ")})),{query,ecosystem,role,category,allocationsOnly,openOnly});
+ const contacts=filterProjectContacts(profiles.map(p=>({...p,search_contacts:profiles.filter(c=>p.approved_cm_ids?.includes(c.id)).map(c=>`${c.name} ${c.account_display_name||""} ${c.handle} ${c.username||""} @${c.username||""}`).join(" ")})),{query,ecosystem,role,category,allocationsOnly,openOnly});
  const portfolios=groupProjectContacts(contacts);
  const total=profiles.filter(p=>p.kind==="Project"&&!p.example&&!p.prototype).length;
  const clear=()=>{setQuery("");setEcosystem("All ecosystems");setRole("All roles");setCategory("All project types");setAllocationsOnly(false);setOpenOnly(false)};

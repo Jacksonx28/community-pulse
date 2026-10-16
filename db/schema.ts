@@ -64,3 +64,10 @@ export const profileReports=sqliteTable("profile_reports",{
  reporterId:text("reporter_id").notNull(),kind:text("kind").notNull(),message:text("message").notNull(),
  status:text("status").notNull().default("pending"),createdAt:text("created_at").notNull(),
 },t=>[index("profile_reports_profile_idx").on(t.profileId)]);
+
+// Personal account identity, independent of managed project and community profiles.
+export const accounts=sqliteTable("accounts",{
+ userId:text("user_id").primaryKey(),username:text("username").notNull(),
+ displayName:text("display_name").notNull(),avatar:text("avatar").notNull().default(""),
+ updatedAt:text("updated_at").notNull(),
+},t=>[uniqueIndex("accounts_username_unique").on(t.username)]);

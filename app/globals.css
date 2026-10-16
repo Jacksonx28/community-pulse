@@ -466,3 +466,12 @@ html{color-scheme:light}
 .team-invite-form .cm-search{flex:1 1 260px}
 .profile-username{font-size:13px;color:#667085;margin:4px 0 10px;overflow-wrap:anywhere}
 @media(max-width:600px){.team-invite-form .cm-search{flex:0 1 auto;width:100%}.cm-search{padding:10px}}
+.account-menu-photo{height:100%;width:100%;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-size:inherit}
+.account-menu-photo img{height:100%;width:100%;object-fit:cover}
+.account-photo-editor{display:flex;align-items:center;gap:18px;margin-bottom:10px}
+.account-photo-preview{width:80px;height:80px;flex:0 0 80px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#eef1ff;color:#3854f5;font-size:26px}
+.account-photo-preview img{width:100%;height:100%;object-fit:cover}
+.account-photo-editor>div{min-width:0}.account-photo-editor input{width:100%;padding:8px 0;min-height:44px}.account-photo-editor small{display:block}
+.account-photo-editor .text-link{display:block;margin-top:8px}.account-identity-form{max-width:600px}
+@media(max-width:600px){.account-photo-editor{align-items:flex-start;gap:12px}.account-photo-preview{width:64px;height:64px;flex-basis:64px}}
+.account-save-success{padding:12px 14px;background:#eef9f1;color:#21653b;border:1px solid #cce7d2;border-radius:6px}

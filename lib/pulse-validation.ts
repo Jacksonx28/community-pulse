@@ -1,7 +1,6 @@
 import { z } from "zod";
 const webUrl=z.string().trim().max(400).refine(value=>{try {return ["https:","http:"].includes(new URL(value).protocol)}catch{return false}},"Enter a valid website URL.");
 export const communityInput=z.object({
-  username:z.string().trim().transform(v=>v.replace(/^@/,"").toLowerCase()).pipe(z.string().regex(/^[a-z0-9_]{3,30}$/, "Use 3 to 30 letters, numbers or underscores for your username.")).optional(),
   id:z.string().uuid().optional(),
   name:z.string().trim().min(2).max(80),kind:z.enum(["Community","Project","CM"]),ecosystem:z.enum(["Multichain","Ethereum","Base","Solana","Robinhood Chain","Arc","Sui","Other"]),
   description:z.string().trim().min(10).max(600),representative:z.string().trim().min(2).max(80),

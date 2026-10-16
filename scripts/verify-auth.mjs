@@ -25,8 +25,12 @@ for(const kind of ['Community','Project','CM']){
  assert.equal(result.headers.get('location'),'https://pulse.test'+destination);
 }
 exchangeError={message:'invalid code'};assert.match((await callback.GET(new Request('https://pulse.test/auth/callback?code=invalid'))).headers.get('location'),/error=callback/);
-const auth=module('lib/auth.ts',{'./supabase/server':imports['@/lib/supabase/server'],'next/navigation':{redirect:()=>{throw Error('redirect')}}});
+let savedAccount=null;
+const auth=module('lib/auth.ts',{'./pulse-db':{database:()=>({prepare:()=>({bind:()=>({first:async()=>savedAccount})})})},'./supabase/server':imports['@/lib/supabase/server'],'next/navigation':{redirect:()=>{throw Error('redirect')}}});
 assert.equal((await auth.getUser()).userId,'verified-id');
+savedAccount={display_name:'Jackson',username:'kingjackson',avatar:'https://example.test/my-photo.jpg'};
+const customUser=await auth.getUser();assert.equal(customUser.displayName,'Jackson');assert.equal(customUser.username,'kingjackson');assert.equal(customUser.avatar,savedAccount.avatar);assert.equal(customUser.email,'person@example.test');assert.equal(customUser.userId,'verified-id');
+savedAccount=null;
 supabase.auth.getUser=async()=>({data:{user:null},error:{message:'invalid token'}});assert.equal(await auth.getUser(),null);
 const logout=module('app/auth/logout/route.ts',imports);assert.equal((await logout.POST(new Request('https://pulse.test/auth/logout',{method:'POST',headers:{origin:'https://evil.test'}}))).status,403);
 let logoutCalls=0,logoutError=null;
