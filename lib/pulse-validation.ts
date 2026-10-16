@@ -40,3 +40,5 @@ export const reportInput=z.object({profileId:z.string().uuid(),kind:z.enum(["Inc
 export const reviewInput=z.object({id:z.string().uuid(),status:z.enum(["reviewed","dismissed"])}).strict();
 
 export const completionInput=z.object({id:z.string().uuid(),mode:z.enum(["request","confirm","ongoing"]),version:z.number().int().min(0)}).strict();
+
+export const deleteProfileInput=z.object({id:z.string().uuid(),confirmation:z.string().trim().min(2).max(80)}).strict();

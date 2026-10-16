@@ -520,3 +520,14 @@ html{color-scheme:light}
 .account-menu-identity{gap:4px;padding:12px 10px 14px}
 .account-menu-identity strong{font-weight:500;line-height:1.5}
 .account-menu-identity span{line-height:1.5}
+.delete-profile-section{margin-top:32px;border-top:1px solid var(--border);padding-top:18px}
+.delete-profile-section summary{color:#a3343c;cursor:pointer;font-size:14px;min-height:44px;padding:10px 0;font-weight:400}
+.delete-profile-section>p{font-size:13px;line-height:1.7;color:#667085;margin:12px 0}
+.delete-profile-section form{display:grid;gap:12px;margin-top:20px}
+.delete-profile-section label{display:grid;gap:8px;font-size:14px;color:#344054;overflow-wrap:anywhere}
+.delete-profile-section input{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--input);border-radius:6px;background:white}
+.delete-profile-section small{font-size:12px;line-height:1.6;color:#667085}
+.delete-profile-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+.delete-profile-button{min-height:44px;padding:10px 16px;border:1px solid #a3343c;border-radius:6px;color:white;background:#a3343c;font-size:14px}
+.delete-profile-button:disabled{cursor:not-allowed;opacity:.45}
+@media(max-width:600px){.delete-profile-actions{display:grid;grid-template-columns:1fr 1fr}}

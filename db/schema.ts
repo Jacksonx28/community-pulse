@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer, index, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
 export const communities = sqliteTable("communities", {
   username: text("username"),
+  deletedAt: text("deleted_at").notNull().default(""),
   id: text("id").primaryKey(), ownerId: text("owner_id").notNull(), name: text("name").notNull(),
   kind: text("kind").notNull(), ecosystem: text("ecosystem").notNull(), description: text("description").notNull(),
   representative: text("representative").notNull(), role: text("role").notNull(), handle: text("handle").notNull(),
