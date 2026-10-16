@@ -517,3 +517,6 @@ html{color-scheme:light}
 .account-settings .account-access-link strong{font-weight:500}
 .account-settings .settings-section-heading{margin-bottom:26px}
 .account-settings .settings-section-heading p{margin-top:6px}
+.account-menu-identity{gap:4px;padding:12px 10px 14px}
+.account-menu-identity strong{font-weight:500;line-height:1.5}
+.account-menu-identity span{line-height:1.5}
