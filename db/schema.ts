@@ -1,5 +1,6 @@
-import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
 export const communities = sqliteTable("communities", {
+  username: text("username"),
   id: text("id").primaryKey(), ownerId: text("owner_id").notNull(), name: text("name").notNull(),
   kind: text("kind").notNull(), ecosystem: text("ecosystem").notNull(), description: text("description").notNull(),
   representative: text("representative").notNull(), role: text("role").notNull(), handle: text("handle").notNull(),
@@ -26,7 +27,7 @@ export const communities = sqliteTable("communities", {
   compensation: text("compensation").notNull().default(''),
   xUserId: text("x_user_id").notNull().default(""),
   discordUserId: text("discord_user_id").notNull().default(""),
-}, t=>[index("communities_owner_idx").on(t.ownerId)]);
+}, t=>[index("communities_owner_idx").on(t.ownerId), uniqueIndex("communities_username_unique").on(t.username)]);
 export const collaborations = sqliteTable("collaborations", {
   completionRequestedBy: text("completion_requested_by").notNull().default(""),
   completionRequestedSide: text("completion_requested_side").notNull().default(""),

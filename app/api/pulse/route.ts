@@ -3,9 +3,15 @@ import { database } from "@/lib/pulse-db";
 import { communityInput, requestInput, responseInput, teamInput, readInput, reportInput, reviewInput, completionInput } from "@/lib/pulse-validation";
 export const dynamic="force-dynamic";
 const json=(value:unknown,status=200)=>Response.json(value,{status,headers:{"Cache-Control":"no-store"}});
-export async function GET(){
+export async function GET(request?:Request){
   try {
     const user=await getUser(); const db=database();
+    if(request&&new URL(request.url).searchParams.has("username")){
+      const query=new URL(request.url).searchParams;const username=(query.get("username")||"").replace(/^@/,"").toLowerCase();
+      if(!/^[a-z0-9_]{3,30}$/.test(username))return json({available:false,error:"Use 3 to 30 letters, numbers or underscores."},400);
+      const found=await db.prepare("SELECT id FROM communities WHERE username=?").bind(username).first<{id:string}>();
+      return json({available:!found||found.id===query.get("profileId")});
+    }
     const {results}=await db.prepare("SELECT c.*, (SELECT COUNT(*) FROM collaborations done JOIN communities ds ON ds.id=done.source_id JOIN communities dt ON dt.id=done.target_id WHERE done.status='completed' AND done.completion_confirmed_at<>'' AND ds.owner_id<>dt.owner_id AND (done.source_id=c.id OR done.target_id=c.id OR (c.kind='CM' AND done.credited_cm_id=c.id))) AS confirmed_collaborations, COALESCE((SELECT SUM(r.approved_spots) FROM collaborations r WHERE r.target_id=c.id AND r.kind='Whitelist spots' AND r.status IN ('accepted','completed')),0) AS allocated_spots FROM communities c ORDER BY c.created_at DESC LIMIT 500").all();
     const contacts=(await db.prepare("SELECT project_id,cm_id FROM project_cm_contacts").all()).results as {project_id:string,cm_id:string}[];
     const team=(await db.prepare("SELECT pt.project_id,pt.cm_id,pt.status,p.name AS project_name,c.name AS cm_name,c.owner_id AS cm_owner,p.owner_id AS project_owner FROM project_team pt JOIN communities p ON p.id=pt.project_id AND p.kind IN ('Project','Community') JOIN communities c ON c.id=pt.cm_id AND c.kind='CM'").all()).results as {project_id:string,cm_id:string,status:string,project_name:string,cm_name:string,cm_owner:string,project_owner:string}[];
@@ -65,6 +71,7 @@ export async function POST(request:Request){
     if(body.action==="community"){
       const input=communityInput.safeParse(body.data);if(!input.success)return json({error:input.error.issues[0].message},400);
       const d=input.data;
+      if(d.username){const taken=await db.prepare("SELECT id FROM communities WHERE username=? AND id<>?").bind(d.username,d.id||"").first();if(taken)return json({error:"That Community Pulse username is taken. Choose another."},409);}
       const cmIds=d.kind!=="CM"?[...new Set(d.projectCMIds)]:[];
       for(const cmId of cmIds){const cm=await db.prepare("SELECT kind FROM communities WHERE id=?").bind(cmId).first<{kind:string}>();if(cm?.kind!=="CM")return json({error:"Choose an existing CM profile."},400);}
       const saveCMs=async(projectId:string)=>{await db.batch([db.prepare("DELETE FROM project_cm_contacts WHERE project_id=?").bind(projectId),...cmIds.map(cmId=>db.prepare("INSERT INTO project_cm_contacts (project_id,cm_id) VALUES (?,?)").bind(projectId,cmId))])};
@@ -82,8 +89,8 @@ export async function POST(request:Request){
         if(!d.managerProfileId)managerId=existing.manager_id||d.id;
         const allocated=await db.prepare("SELECT COALESCE(SUM(approved_spots),0) AS n FROM collaborations WHERE target_id=? AND kind='Whitelist spots' AND status IN ('accepted','completed')").bind(d.id).first<{n:number}>();
         if(d.spotsListed&&d.availableSpots<(allocated?.n||0))return json({error:"The total allocation cannot be less than already approved spots."},400);
-        const profileUpdate=await db.prepare("UPDATE communities SET name=?,kind=?,ecosystem=?,description=?,representative=?,role=?,handle=?,official_url=?,open=?,project_category=?,handles_spots=?,updated_at=?,x_user_id=?,discord_user_id=?,manager_id=?,audience_size=?,interests=?,past_collaborations=?,avatar_url=?,banner_url=?,availability=?,current_projects=?,contact_route=?,spots_listed=?,available_spots=?,spots_deadline=?,eligibility=?,hiring=?,hiring_details=?,compensation=?,show_allocations=? WHERE id=? AND owner_id=? AND (?=0 OR ?>=COALESCE((SELECT SUM(approved_spots) FROM collaborations WHERE target_id=communities.id AND kind='Whitelist spots' AND status IN ('accepted','completed')),0))")
-          .bind(d.name,d.kind,d.ecosystem,d.description,d.representative,d.role,d.handle.replace(/^@/,""),d.officialUrl,d.open?1:0,d.kind==="Project"?d.projectCategory:"Other",d.kind==="Project"&&d.handlesSpots?1:0,now,d.xUserId,d.discordUserId,managerId,d.audienceSize,d.interests,d.pastCollaborations,d.avatarUrl,d.bannerUrl,d.availability,d.currentProjects,d.contactRoute,d.kind==="Project"&&d.spotsListed?1:0,d.availableSpots,d.spotsDeadline,d.eligibility,d.kind==="Project"&&d.hiring?1:0,d.hiringDetails,d.compensation,d.showAllocations?1:0,d.id,user.userId,d.spotsListed?1:0,d.availableSpots).run();
+        const profileUpdate=await db.prepare("UPDATE communities SET username=COALESCE(?,username),name=?,kind=?,ecosystem=?,description=?,representative=?,role=?,handle=?,official_url=?,open=?,project_category=?,handles_spots=?,updated_at=?,x_user_id=?,discord_user_id=?,manager_id=?,audience_size=?,interests=?,past_collaborations=?,avatar_url=?,banner_url=?,availability=?,current_projects=?,contact_route=?,spots_listed=?,available_spots=?,spots_deadline=?,eligibility=?,hiring=?,hiring_details=?,compensation=?,show_allocations=? WHERE id=? AND owner_id=? AND (?=0 OR ?>=COALESCE((SELECT SUM(approved_spots) FROM collaborations WHERE target_id=communities.id AND kind='Whitelist spots' AND status IN ('accepted','completed')),0))")
+          .bind(d.username??null,d.name,d.kind,d.ecosystem,d.description,d.representative,d.role,d.handle.replace(/^@/,""),d.officialUrl,d.open?1:0,d.kind==="Project"?d.projectCategory:"Other",d.kind==="Project"&&d.handlesSpots?1:0,now,d.xUserId,d.discordUserId,managerId,d.audienceSize,d.interests,d.pastCollaborations,d.avatarUrl,d.bannerUrl,d.availability,d.currentProjects,d.contactRoute,d.kind==="Project"&&d.spotsListed?1:0,d.availableSpots,d.spotsDeadline,d.eligibility,d.kind==="Project"&&d.hiring?1:0,d.hiringDetails,d.compensation,d.showAllocations?1:0,d.id,user.userId,d.spotsListed?1:0,d.availableSpots).run();
         if(!profileUpdate.meta.changes)return json({error:"The allocation changed while you were editing. Refresh and try again."},409);
         await saveCMs(d.id);
         return json({id:d.id});
@@ -91,8 +98,8 @@ export async function POST(request:Request){
       const id=crypto.randomUUID();
       const count=await db.prepare("SELECT COUNT(*) AS n FROM communities WHERE owner_id=?").bind(user.userId).first<{n:number}>();
       if((count?.n||0)>=20)return json({error:"The pilot supports up to 20 profiles per account."},400);
-      await db.prepare(`INSERT INTO communities (id,owner_id,name,kind,ecosystem,description,representative,role,handle,official_url,open,created_at,project_category,handles_spots,updated_at,x_user_id,discord_user_id,manager_id,audience_size,interests,past_collaborations,avatar_url,banner_url,availability,current_projects,contact_route,spots_listed,available_spots,spots_deadline,eligibility,hiring,hiring_details,compensation,show_allocations) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-        .bind(id,user.userId,d.name,d.kind,d.ecosystem,d.description,d.representative,d.role,d.handle.replace(/^@/,""),d.officialUrl,d.open?1:0,now,d.kind==="Project"?d.projectCategory:"Other",d.kind==="Project"&&d.handlesSpots?1:0,now,d.xUserId,d.discordUserId,managerId,d.audienceSize,d.interests,d.pastCollaborations,d.avatarUrl,d.bannerUrl,d.availability,d.currentProjects,d.contactRoute,d.kind==="Project"&&d.spotsListed?1:0,d.availableSpots,d.spotsDeadline,d.eligibility,d.kind==="Project"&&d.hiring?1:0,d.hiringDetails,d.compensation,d.showAllocations?1:0).run();
+      await db.prepare(`INSERT INTO communities (id,owner_id,name,kind,ecosystem,description,representative,role,handle,official_url,open,created_at,project_category,handles_spots,updated_at,x_user_id,discord_user_id,manager_id,audience_size,interests,past_collaborations,avatar_url,banner_url,availability,current_projects,contact_route,spots_listed,available_spots,spots_deadline,eligibility,hiring,hiring_details,compensation,show_allocations,username) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .bind(id,user.userId,d.name,d.kind,d.ecosystem,d.description,d.representative,d.role,d.handle.replace(/^@/,""),d.officialUrl,d.open?1:0,now,d.kind==="Project"?d.projectCategory:"Other",d.kind==="Project"&&d.handlesSpots?1:0,now,d.xUserId,d.discordUserId,managerId,d.audienceSize,d.interests,d.pastCollaborations,d.avatarUrl,d.bannerUrl,d.availability,d.currentProjects,d.contactRoute,d.kind==="Project"&&d.spotsListed?1:0,d.availableSpots,d.spotsDeadline,d.eligibility,d.kind==="Project"&&d.hiring?1:0,d.hiringDetails,d.compensation,d.showAllocations?1:0,d.username??null).run();
       await saveCMs(id);
       return json({id},201);
     }
@@ -163,5 +170,5 @@ export async function POST(request:Request){
       return json({id:d.id,status:d.status});
     }
     return json({error:"Unknown action."},400);
-  }catch(error){console.error("Pulse write failed",error);return json({error:"We could not save this. Your input is still here; please try again."},503)}
+  }catch(error){if(String(error).includes("communities.username"))return json({error:"That Community Pulse username is taken. Choose another."},409);console.error("Pulse write failed",error);return json({error:"We could not save this. Your input is still here; please try again."},503)}
 }

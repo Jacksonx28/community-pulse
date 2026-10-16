@@ -371,4 +371,34 @@ for(const id of [finishSource,finishTarget])assert.equal(finishList.communities.
 assert.equal(finishList.communities.find(c=>c.id===finishCM).confirmed_collaborations,1);
 assert.equal(finishList.communities.find(c=>c.id===ownTarget).confirmed_collaborations,0);
 console.log('Passed: opposite-side completion, both initiators, Still ongoing, stale updates, owner and delegated permissions, revocation, preserved allocations, CM credit, shared inbox counts, legacy exclusions and self-confirmation prevention.');
-sqlite.close();console.log("Passed: accepted CM permissions, private assignments, immediate revocation, durable unread state, private listing reviews, community platforms, updated ecosystems, help assistant answers, direct project allocations, budget guards, CM availability and hiring, identity preservation, multi-project CM ownership, project-specific destinations, reusable audience profiles, discussion transitions, contact persistence, safe DM links, draft encoding, prototype isolation, migration compatibility, project discovery, ownership checks, request visibility, and allocation limits.");
+console.log("Passed: accepted CM permissions, private assignments, immediate revocation, durable unread state, private listing reviews, community platforms, updated ecosystems, help assistant answers, direct project allocations, budget guards, CM availability and hiring, identity preservation, multi-project CM ownership, project-specific destinations, reusable audience profiles, discussion transitions, contact persistence, safe DM links, draft encoding, prototype isolation, migration compatibility, project discovery, ownership checks, request visibility, and allocation limits.");
+
+// Unique profile usernames survive old clients and existing relationships.
+user={userId:"username-owner",email:"username@example.test"};
+const namedResponse=await post("community",{...profile("Repeated name"),username:"@Jackson_CM"});assert.equal(namedResponse.status,201);const named=await namedResponse.json();
+assert.equal(sqlite.prepare("SELECT username FROM communities WHERE id=?").get(named.id).username,"jackson_cm");
+assert.equal((await post("community",{...profile("Repeated name"),username:"JACKSON_CM"})).status,409);
+assert.equal((await post("community",{...profile("Repeated name"),username:"different_cm"})).status,201,"Display names may repeat");
+assert.equal((await post("community",{...profile("Invalid username"),username:"two words"})).status,400);
+assert.equal((await post("community",{...profile("Updated name"),id:named.id})).status,200,"Legacy saves retain existing username");
+assert.equal(sqlite.prepare("SELECT username FROM communities WHERE id=?").get(named.id).username,"jackson_cm");
+assert.equal((await (await route.GET(new Request("https://example.test/api/pulse?username=JACKSON_CM"))).json()).available,false);
+assert.equal((await (await route.GET(new Request(`https://example.test/api/pulse?username=jackson_cm&profileId=${named.id}`))).json()).available,true);
+user={userId:"username-outsider",email:"outsider@example.test"};
+assert.equal((await post("community",{...profile("Attempted rename"),id:named.id,username:"stolen_name"})).status,403);
+user={userId:"username-owner",email:"username@example.test"};
+assert.equal((await post("community",{...profile("Renamed profile"),id:named.id,username:"new_jackson_cm"})).status,200);
+assert.equal((await (await route.GET(new Request("https://example.test/api/pulse?username=jackson_cm"))).json()).available,true);
+assert.throws(()=>sqlite.prepare("UPDATE communities SET username='new_jackson_cm' WHERE id='legacy'").run(),/UNIQUE/,"Database guards simultaneous duplicate claims");
+assert.equal(sqlite.prepare("SELECT username FROM communities WHERE id='legacy'").get().username,null,"Existing profiles require no destructive migration");
+console.log("Passed: unique usernames, normalization, availability checks, rename, duplicate display names, legacy saves, database uniqueness and ownership checks.");
+
+const {searchCMProfiles}=module("lib/cm-search.ts",{});
+const manyCMs=Array.from({length:150},(_,i)=>({id:String(i),name:"Same display name",representative:"Contact",username:`manager_${i}`,handle:`social_${i}`}));
+assert.deepEqual(searchCMProfiles(manyCMs,"@MANAGER_149").map(p=>p.id),["149"]);
+assert.deepEqual(searchCMProfiles(manyCMs,"@social_149").map(p=>p.id),["149"]);
+assert.equal(searchCMProfiles(manyCMs,"Same display name").length,150);
+assert.equal(searchCMProfiles(manyCMs,"manager_149",["149"]).length,0);
+assert.equal(searchCMProfiles(manyCMs,"does_not_exist").length,0);
+console.log("Passed: 150 CM search results, repeated names, unique usernames, X handles, selected exclusion and empty search results.");
+sqlite.close();
