@@ -475,3 +475,37 @@ html{color-scheme:light}
 .account-photo-editor .text-link{display:block;margin-top:8px}.account-identity-form{max-width:600px}
 @media(max-width:600px){.account-photo-editor{align-items:flex-start;gap:12px}.account-photo-preview{width:64px;height:64px;flex-basis:64px}}
 .account-save-success{padding:12px 14px;background:#eef9f1;color:#21653b;border:1px solid #cce7d2;border-radius:6px}
+/* Account settings: quiet navigation states and a clear form hierarchy. */
+.account-menu [data-slot=dropdown-menu-item]{outline:none;box-shadow:none;transition:background .12s ease,color .12s ease}
+.account-menu [data-slot=dropdown-menu-item][data-highlighted]{background:#f3f5f9;color:#202b42;outline:none;box-shadow:none}
+.account-menu [data-slot=dropdown-menu-item]:focus-visible{outline:1px solid #a5b1c5;outline-offset:-2px;background:#f3f5f9;color:#202b42;box-shadow:none}
+.account-settings .settings-section-heading{margin-bottom:24px}
+.account-settings .settings-section-heading h2{font-size:18px;margin:0 0 6px}
+.account-settings .settings-section-heading p{font-size:14px;line-height:1.6;color:#667085;margin:0}
+.account-settings .settings-section + .settings-section{padding-top:28px}
+.account-settings .account-identity-form{max-width:none;gap:24px}
+.account-photo-editor{margin:0;padding-bottom:24px;border-bottom:1px solid #e8ecf2;align-items:center}
+.account-photo-controls{display:grid;gap:8px}
+.account-photo-controls>strong{font-size:14px;font-weight:600;color:#263247}
+.account-photo-actions{display:flex;align-items:center;gap:16px}
+.account-photo-actions .secondary-btn{min-height:36px;padding:7px 12px;font-size:13px;width:auto!important}
+.account-photo-actions .text-link{margin:0;min-height:36px;font-size:13px;color:#667085}
+.account-photo-controls .account-photo-input{display:none}
+.account-photo-controls>small{font-size:12px;color:#667085}
+.account-identity-fields{display:grid;gap:22px}
+.account-identity-fields>label{display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:550;color:#263247}
+.account-identity-fields input{margin:0;min-height:44px}
+.account-identity-fields small{font-size:13px;font-weight:400;line-height:1.6;color:#667085}
+.account-username-input{display:flex;align-items:center;border:1px solid var(--input);border-radius:6px;background:#fff;overflow:hidden}
+.account-username-input>span{padding-left:13px;color:#7a8495;font-size:15px;font-weight:400}
+.account-username-input input{border:0!important;box-shadow:none!important;outline:none!important;min-width:0;width:100%;padding-left:5px!important}
+.account-username-input:focus-within{outline:2px solid #d6defa;border-color:#3854f5}
+.account-identity-fields small.alias-is-available{color:#247044}
+.account-save-row{display:flex;align-items:center;justify-content:space-between;gap:24px;padding-top:22px;border-top:1px solid #e8ecf2}
+.account-save-row>small{max-width:340px;font-size:12px;line-height:1.6;color:#667085}
+.account-save-row .primary-btn{flex-shrink:0;white-space:nowrap}
+.account-settings .settings-action-list{margin-top:18px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.account-settings .account-access-link:hover{background:#f8f9fc}
+@media(max-width:600px){.account-photo-editor{gap:14px}.account-save-row{flex-direction:column;align-items:stretch;gap:16px}.account-save-row>small{max-width:none}.account-page-card .account-photo-actions .secondary-btn{align-self:auto;width:auto}.account-settings .settings-section-heading{margin-bottom:20px}}
+.account-page-card .account-settings .account-save-row .primary-btn{width:auto;align-self:center}
+@media(max-width:600px){.account-page-card .account-settings .account-save-row .primary-btn{width:100%;align-self:stretch}}
