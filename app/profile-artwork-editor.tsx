@@ -70,7 +70,7 @@ export default function ProfileArtworkEditor({ avatar, banner, name, disabled, o
   return <section className="profile-artwork-editor" aria-labelledby={`${id}-title`}>
     <div className="profile-artwork-heading"><h2 id={`${id}-title`}>Profile images</h2><p>Add a photo and banner to make this profile easy to recognise.</p></div>
     <div className="profile-artwork-fields">
-      <div className="profile-image-field"><strong>Profile photo</strong><div className="profile-photo-display"><ProfileImage key={avatar} url={avatar} name={name || "CP"} className="profile-upload-avatar"/></div>
+      <div className="profile-image-field"><strong>Profile photo</strong><div className="profile-photo-display"><ProfileImage key={avatar} url={avatar} name={name || "Community Pulse"} className="profile-upload-avatar"/></div>
         {accountPhoto && <small className="profile-artwork-hint">Using your account photo.</small>}
         <div className="profile-image-actions"><button type="button" className="secondary-btn" disabled={blocked} onClick={() => photoInput.current?.click()}><Upload size={16}/>{avatar && !accountPhoto ? "Replace photo" : "Upload photo"}</button>{avatar && !accountPhoto && <button type="button" className="text-link" disabled={blocked} onClick={() => onAvatar("")}>Remove photo</button>}</div>
         <input ref={photoInput} className="profile-image-file" tabIndex={-1} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Upload profile photo" disabled={blocked} onChange={e => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void choose("avatar", file); }}/>

@@ -541,7 +541,7 @@ html{color-scheme:light}
 .profile-photo-display{display:grid;place-items:center;min-height:104px;flex:1}
 .profile-upload-avatar{height:88px!important;width:88px!important;font-size:24px!important;border:1px solid var(--border);border-radius:50%;overflow:hidden;background:#eef1fb;color:#53627e;display:grid;place-items:center}
 .profile-upload-avatar img{height:100%;width:100%;object-fit:cover}
-.profile-upload-banner{min-height:104px;aspect-ratio:3/1;border:1px dashed #cbd2e2;border-radius:6px;background:#f5f7fc;overflow:hidden;display:grid;place-items:center;flex:1}
+.profile-upload-banner{width:100%;min-height:0;aspect-ratio:3/1;border:1px dashed #cbd2e2;border-radius:6px;background:#f5f7fc;overflow:hidden;display:grid;place-items:center;flex:none}
 .profile-upload-banner img{height:100%;width:100%;object-fit:cover}
 .profile-upload-banner>span{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;line-height:1.4;color:#67748d;padding:10px}
 .profile-image-actions{display:flex;flex-wrap:wrap;align-items:center;gap:5px 12px}
@@ -558,4 +558,4 @@ html{color-scheme:light}
 .pulse-form .profile-crop-controls input[type=range]{width:100%;min-height:44px;height:44px;padding:0;border:0;box-shadow:none;background:transparent;accent-color:#3559f4;cursor:pointer}
 .profile-crop-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .profile-image-links{border-top:1px solid var(--border);padding-top:12px}.profile-image-links>summary{cursor:pointer;font-size:13px;color:var(--muted-foreground);min-height:28px;line-height:1.6;list-style-position:inside}.profile-image-links .form-row{margin-top:12px}.profile-image-links small{display:block;font-size:12px;line-height:1.5;margin-top:8px;color:var(--muted-foreground)}
-@media(max-width:600px){.profile-artwork-fields{grid-template-columns:minmax(0,1fr)}.profile-image-field{padding:14px}.profile-photo-display{min-height:92px}.profile-upload-banner{min-height:100px;max-height:155px}.profile-crop-editor{padding:12px}.profile-crop-controls label{grid-template-columns:1fr;gap:3px}.profile-crop-actions>button{flex:1}.profile-crop-heading{align-items:flex-start}.profile-crop-heading span{max-width:110px;text-align:right}}
+@media(max-width:600px){.profile-artwork-fields{grid-template-columns:minmax(0,1fr)}.profile-image-field{padding:14px}.profile-photo-display{min-height:92px}.profile-upload-banner{min-height:0;max-height:none}.profile-crop-editor{padding:12px}.profile-crop-controls label{grid-template-columns:1fr;gap:3px}.profile-crop-actions>button{flex:1}.profile-crop-heading{align-items:flex-start}.profile-crop-heading span{max-width:110px;text-align:right}}
