@@ -24,8 +24,9 @@ const db={
   },
 };
 function module(path,imports){const out={};const code=ts.transpileModule(readFileSync(path,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function("require","exports",code)(name=>{if(!(name in imports))throw Error(`Unexpected import: ${name}`);return imports[name]},out);return out}
-const validation=module("lib/pulse-validation.ts",{zod:{z}});
-const route=module("app/api/pulse/route.ts",{"@/lib/auth":{getUser:async()=>user},"@/lib/pulse-db":{database:()=>db},"@/lib/pulse-validation":validation});
+const profileImages=module("lib/profile-images.ts",{});
+const validation=module("lib/pulse-validation.ts",{zod:{z},"./profile-images":profileImages});
+const route=module("app/api/pulse/route.ts",{"@/lib/auth":{getUser:async()=>user},"@/lib/pulse-db":{database:()=>db},"@/lib/pulse-validation":validation,"@/lib/profile-images":profileImages});
 const post=(action,data,origin="https://pulse.test")=>route.POST(new Request("https://pulse.test/api/pulse",{method:"POST",headers:{origin,"Content-Type":"application/json"},body:JSON.stringify({action,data})}));
 const profile=name=>({name,kind:"Community",ecosystem:"Base",description:"A test community for API verification.",representative:"Test person",role:"Collab manager",handle:"test_contact",officialUrl:"https://example.test",open:true});
 const created=await post("community",profile("Alice community"));assert.equal(created.status,201);const a=await created.json();
@@ -483,5 +484,63 @@ assert.ok(afterDeletion.communities.some(c=>c.id===deletionPartner.id),'Unrelate
 assert.equal((await post('delete-profile',{id:deletionPartner.id,confirmation:'Other partner'})).status,401);
 assert.equal(sqlite.prepare('PRAGMA foreign_key_check').all().length,0);
 console.log('Passed: owner-only deletion for all profile types, confirmation, account preservation, public removal, team revocation, CM reassignment, unfinished cancellation, completed history, stale writes, photo privacy and foreign key integrity.');
+
+
+// Profile artwork is owner-managed and served separately from directory JSON.
+const artworkRoute=module('app/api/profile-image/route.ts',{'@/lib/pulse-db':{database:()=>db},'@/lib/profile-images':profileImages});
+const artworkPNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jzAAAAABJRU5ErkJggg==';
+const largerArtwork='data:image/png;base64,'+Buffer.concat([Buffer.from(artworkPNG.split(',')[1],'base64'),Buffer.alloc(15000)]).toString('base64');
+const readArtwork=(url,headers={})=>artworkRoute.GET(new Request('https://pulse.test'+url,{headers}));
+const artworkCases=[];
+for(const kind of ['CM','Project','Community']){
+ user={userId:'artwork-'+kind,email:'artwork@example.test'};
+ const details={...profile('Artwork '+kind),kind,avatarUrl:artworkPNG,bannerUrl:largerArtwork};
+ const created=await post('community',details);assert.equal(created.status,201);
+ const {id}=await created.json();
+ const list=await (await route.GET()).json();const entry=list.communities.find(c=>c.id===id);
+ assert.match(entry.avatar_url,/^\/api\/profile-image\?id=/);assert.match(entry.banner_url,/kind=banner/);
+ assert.ok(!JSON.stringify(list).includes('data:image/'),'Image bytes never inflate the directory response');
+ assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM profile_images WHERE profile_id=?').get(id).n,2);
+ const image=await readArtwork(entry.avatar_url);assert.equal(image.status,200);assert.equal(image.headers.get('content-type'),'image/png');assert.equal(image.headers.get('x-content-type-options'),'nosniff');
+ assert.equal(Buffer.from(await image.arrayBuffer()).toString('base64'),artworkPNG.split(',')[1]);
+ assert.equal((await readArtwork(entry.avatar_url,{'if-none-match':image.headers.get('etag')})).status,304);
+ assert.equal((await readArtwork(entry.banner_url)).status,200);
+ const unchanged=await post('community',{...details,id,avatarUrl:entry.avatar_url,bannerUrl:entry.banner_url,description:'Updated bio without changing the uploaded artwork.'});assert.equal(unchanged.status,200);
+ assert.equal((await readArtwork(entry.avatar_url)).status,200,'Editing text preserves the uploaded image');
+ assert.equal((await post('community',{...details,id,avatarUrl:'https://pulse.test'+entry.avatar_url,bannerUrl:entry.banner_url})).status,200,'Copied absolute own image links preserve uploaded bytes');
+ const replaced=await post('community',{...details,id,avatarUrl:largerArtwork,bannerUrl:entry.banner_url});assert.equal(replaced.status,200);
+ const updated=(await (await route.GET()).json()).communities.find(c=>c.id===id);
+ assert.notEqual(updated.avatar_url,entry.avatar_url,'Replacing an image changes its cache key');
+ assert.equal((await readArtwork(entry.avatar_url)).status,404,'Old versions cannot read a replacement');
+ assert.equal((await readArtwork(updated.avatar_url)).status,200);
+ assert.equal((await post('community',{...details,id,avatarUrl:entry.avatar_url,bannerUrl:entry.banner_url})).status,409,'A stale edit cannot restore a deleted image version');
+ const rowBefore=sqlite.prepare('SELECT * FROM profile_images WHERE profile_id=? AND kind=?').get(id,'avatar');
+ user={userId:'artwork-intruder',email:'intruder@example.test'};
+ assert.equal((await post('community',{...details,id})).status,403);
+ assert.deepEqual(sqlite.prepare('SELECT * FROM profile_images WHERE profile_id=? AND kind=?').get(id,'avatar'),rowBefore,'Rejected edits leave image data unchanged');
+ user={userId:'artwork-'+kind,email:'artwork@example.test'};
+ assert.equal((await post('community',{...details,id,avatarUrl:'',bannerUrl:'https://example.test/replacement.jpg'})).status,200);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM profile_images WHERE profile_id=?').get(id).n,0,'Remove and external replacement clear stored uploads');
+ assert.equal((await readArtwork(updated.avatar_url)).status,404);
+ assert.equal((await post('community',{...details,id})).status,200);
+ const restored=(await (await route.GET()).json()).communities.find(c=>c.id===id);artworkCases.push({details,id,entry:restored});
+ assert.equal((await post('delete-profile',{id,confirmation:details.name})).status,200);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM profile_images WHERE profile_id=?').get(id).n,0,'Deleting a profile removes its image bytes');
+ assert.equal((await readArtwork(restored.avatar_url)).status,404);
+}
+user={userId:'artwork-validation',email:'artwork@example.test'};
+for(const invalid of ['data:image/svg+xml;base64,PHN2Zz4=','data:image/png;base64,bm90YW5pbWFnZQ==','data:image/jpeg;base64,iVBORw0KGgo=','javascript:alert(1)','/api/profile-image?id=invalid&kind=avatar&v=bad']){
+ assert.equal((await post('community',{...profile('Invalid image'),avatarUrl:invalid})).status,400);
+}
+assert.equal((await post('community',{...profile('Oversized image'),avatarUrl:'data:image/png;base64,'+'A'.repeat(260000)})).status,400);
+assert.equal((await post('community',{...profile('Oversized request'),bannerUrl:'A'.repeat(profileImages.PROFILE_IMAGE_BODY_LIMIT)})).status,413);
+assert.equal((await post('request',{message:'A'.repeat(20000)})).status,413,'Non-profile actions retain their smaller body limit');
+assert.equal((await post('community',{...profile('Foreign image ref'),avatarUrl:artworkCases[0].entry.avatar_url})).status,400,'A new profile cannot claim another profile image reference');
+user=null;
+assert.equal((await post('community',{...profile('Anonymous upload'),avatarUrl:artworkPNG})).status,401);
+assert.equal((await readArtwork('/api/profile-image?id=bad&kind=avatar&v=bad')).status,404);
+assert.deepEqual(profileImages.imageCrop(1600,900,1500,500,1,50,100),{x:0,y:900-1600/3,width:1600,height:1600/3});
+const zoomed=profileImages.imageCrop(1200,800,512,512,2,100,0);assert.equal(zoomed.x+zoomed.width,1200);assert.equal(zoomed.y,0);assert.equal(zoomed.width,zoomed.height);
+console.log('Passed: CM, project and community photo/banner uploads, large image requests, isolated artwork storage, public rendering and caching, text-edit preservation, cache refresh on replacement, stale-edit rejection, owner-only changes, remove/delete cleanup, external links, safe image formats, body limits and crop bounds.');
 
 sqlite.close();

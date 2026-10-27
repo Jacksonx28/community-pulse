@@ -1,8 +1,15 @@
 import { getUser } from "@/lib/auth";
 import { database } from "@/lib/pulse-db";
 import { communityInput, requestInput, responseInput, teamInput, readInput, reportInput, reviewInput, completionInput, deleteProfileInput } from "@/lib/pulse-validation";
+import { PROFILE_IMAGE_BODY_LIMIT, profileImageReference, profileImageUrl } from "@/lib/profile-images";
 export const dynamic="force-dynamic";
 const json=(value:unknown,status=200)=>Response.json(value,{status,headers:{"Cache-Control":"no-store"}});
+async function readBody(request:Request){
+  if(Number(request.headers.get("content-length"))>PROFILE_IMAGE_BODY_LIMIT)throw new RangeError();
+  const reader=request.body?.getReader();if(!reader)return "";
+  const decoder=new TextDecoder();let size=0,result="";
+  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>PROFILE_IMAGE_BODY_LIMIT){await reader.cancel();throw new RangeError()}result+=decoder.decode(value,{stream:true})}return result+decoder.decode()}finally{reader.releaseLock()}
+}
 export async function GET(){
   try {
     const user=await getUser(); const db=database();
@@ -26,8 +33,10 @@ export async function POST(request:Request){
   try {
     const origin=request.headers.get("origin"); if(!origin||origin!==new URL(request.url).origin)return json({error:"Invalid request origin."},403);
     const user=await getUser();if(!user)return json({error:"Sign in to save or request a collaboration."},401);
-    const raw=await request.text();if(raw.length>16000)return json({error:"Request is too large."},413);
+    let raw;try{raw=await readBody(request)}catch{return json({error:"Images are too large. Try smaller images."},413)}
     let body;try{body=JSON.parse(raw)}catch{return json({error:"Invalid request."},400)}
+    if(!body||typeof body!=="object"||Array.isArray(body))return json({error:"Invalid request."},400);
+    if(body.action!=="community"&&raw.length>16000)return json({error:"Request is too large."},413);
     const db=database(); const now=new Date().toISOString();
     if(body.action==="delete-profile"){
       const input=deleteProfileInput.safeParse(body.data);if(!input.success)return json({error:"Confirm the profile name before deleting."},400);
@@ -35,6 +44,7 @@ export async function POST(request:Request){
       if(!existing)return json({error:"Profile not found, or you do not own it."},404);
       if(d.confirmation!==existing.name)return json({error:"Type the profile name exactly to confirm deletion."},409);
       await db.batch([
+        db.prepare("DELETE FROM profile_images WHERE profile_id=?").bind(d.id),
         db.prepare("UPDATE communities SET deleted_at=?,updated_at=?,name=?,description='',representative='',role='',handle='',official_url='',open=0,manager_id='',audience_size=0,interests='',past_collaborations='',avatar_url='',banner_url='',current_projects='',x_user_id='',discord_user_id='',availability='Busy',spots_listed=0,hiring=0,hiring_details='',compensation='',available_spots=0,spots_deadline='',eligibility='',handles_spots=0,username=NULL WHERE id=? AND owner_id=? AND deleted_at=''").bind(now,now,`Deleted ${existing.kind==='CM'?'CM':existing.kind.toLowerCase()} profile`,d.id,user.userId),
         db.prepare("DELETE FROM project_team WHERE project_id=? OR cm_id=?").bind(d.id,d.id),
         db.prepare("DELETE FROM project_cm_contacts WHERE project_id=? OR cm_id=?").bind(d.id,d.id),
@@ -77,8 +87,23 @@ export async function POST(request:Request){
       const d=input.data;const result=await db.prepare("UPDATE profile_reports SET status=? WHERE id=? AND status='pending' AND EXISTS (SELECT 1 FROM communities c WHERE c.id=profile_reports.profile_id AND c.owner_id=?)").bind(d.status,d.id,user.userId).run();if(!result.meta.changes)return json({error:"You cannot update this review, or it has already changed."},403);return json({id:d.id});
     }
     if(body.action==="community"){
+      // Accept a copied absolute link to this profile's own previously uploaded image.
+      for(const field of ["avatarUrl","bannerUrl"]){const value=body.data?.[field];if(typeof value==="string"){try{const url=new URL(value);if(url.origin===origin&&url.pathname==="/api/profile-image")body.data[field]=url.pathname+url.search}catch{}}}
       const input=communityInput.safeParse(body.data);if(!input.success)return json({error:input.error.issues[0].message},400);
       const d=input.data;
+      const artwork=(profileId:string)=>{
+        const statements:D1PreparedStatement[]=[];const urls={avatarUrl:d.avatarUrl,bannerUrl:d.bannerUrl};
+        for(const [field,kind,column] of [["avatarUrl","avatar","avatar_url"],["bannerUrl","banner","banner_url"]] as const){
+          const value=d[field];
+          if(value.startsWith("data:")){
+            const version=crypto.randomUUID();urls[field]=profileImageUrl(profileId,kind,version);
+            statements.push(db.prepare(`INSERT INTO profile_images (profile_id,kind,version,data_url,updated_at) SELECT ?,?,?,?,? WHERE EXISTS (SELECT 1 FROM communities WHERE id=? AND owner_id=? AND deleted_at='' AND ${column}=?) ON CONFLICT(profile_id,kind) DO UPDATE SET version=excluded.version,data_url=excluded.data_url,updated_at=excluded.updated_at`).bind(profileId,kind,version,value,now,profileId,user.userId,urls[field]));
+          }else if(!profileImageReference(value)){
+            statements.push(db.prepare(`DELETE FROM profile_images WHERE profile_id=? AND kind=? AND EXISTS (SELECT 1 FROM communities WHERE id=? AND owner_id=? AND ${column}=?)`).bind(profileId,kind,profileId,user.userId,value));
+          }
+        }
+        return {...urls,statements};
+      };
       const cmIds=d.kind!=="CM"?[...new Set(d.projectCMIds)]:[];
       for(const cmId of cmIds){const cm=await db.prepare("SELECT kind FROM communities WHERE id=? AND deleted_at=''").bind(cmId).first<{kind:string}>();if(cm?.kind!=="CM")return json({error:"Choose an existing CM profile."},400);}
       const saveCMs=async(projectId:string)=>{await db.batch([db.prepare("DELETE FROM project_cm_contacts WHERE project_id=?").bind(projectId),...cmIds.map(cmId=>db.prepare("INSERT INTO project_cm_contacts (project_id,cm_id) SELECT ?,? WHERE EXISTS (SELECT 1 FROM communities WHERE id=? AND deleted_at='') AND EXISTS (SELECT 1 FROM communities WHERE id=? AND deleted_at='')").bind(projectId,cmId,projectId,cmId))])};
@@ -91,13 +116,16 @@ export async function POST(request:Request){
         managerId=linked.manager_id||linked.id;
       }
       if(d.id){
-        const existing=await db.prepare("SELECT owner_id,manager_id FROM communities WHERE id=? AND deleted_at=''").bind(d.id).first<{owner_id:string,manager_id:string}>();
+        const existing=await db.prepare("SELECT owner_id,manager_id,avatar_url,banner_url FROM communities WHERE id=? AND deleted_at=''").bind(d.id).first<{owner_id:string,manager_id:string,avatar_url:string,banner_url:string}>();
         if(!existing||existing.owner_id!==user.userId)return json({error:"You cannot edit this profile."},403);
+        if(profileImageReference(d.avatarUrl)&&d.avatarUrl!==existing.avatar_url||profileImageReference(d.bannerUrl)&&d.bannerUrl!==existing.banner_url)return json({error:"The profile image changed while you were editing. Refresh and try again."},409);
         if(!d.managerProfileId)managerId=existing.manager_id||d.id;
         const allocated=await db.prepare("SELECT COALESCE(SUM(approved_spots),0) AS n FROM collaborations WHERE target_id=? AND kind='Whitelist spots' AND status IN ('accepted','completed')").bind(d.id).first<{n:number}>();
         if(d.spotsListed&&d.availableSpots<(allocated?.n||0))return json({error:"The total allocation cannot be less than already approved spots."},400);
-        const profileUpdate=await db.prepare("UPDATE communities SET name=?,kind=?,ecosystem=?,description=?,representative=?,role=?,handle=?,official_url=?,open=?,project_category=?,handles_spots=?,updated_at=?,x_user_id=?,discord_user_id=?,manager_id=?,audience_size=?,interests=?,past_collaborations=?,avatar_url=?,banner_url=?,availability=?,current_projects=?,contact_route=?,spots_listed=?,available_spots=?,spots_deadline=?,eligibility=?,hiring=?,hiring_details=?,compensation=?,show_allocations=? WHERE id=? AND owner_id=? AND deleted_at='' AND (?=0 OR ?>=COALESCE((SELECT SUM(approved_spots) FROM collaborations WHERE target_id=communities.id AND kind='Whitelist spots' AND status IN ('accepted','completed')),0))")
-          .bind(d.name,d.kind,d.ecosystem,d.description,d.representative,d.role,d.handle.replace(/^@/,""),d.officialUrl,d.open?1:0,d.kind==="Project"?d.projectCategory:"Other",d.kind==="Project"&&d.handlesSpots?1:0,now,d.xUserId,d.discordUserId,managerId,d.audienceSize,d.interests,d.pastCollaborations,d.avatarUrl,d.bannerUrl,d.availability,d.currentProjects,d.contactRoute,d.kind==="Project"&&d.spotsListed?1:0,d.availableSpots,d.spotsDeadline,d.eligibility,d.kind==="Project"&&d.hiring?1:0,d.hiringDetails,d.compensation,d.showAllocations?1:0,d.id,user.userId,d.spotsListed?1:0,d.availableSpots).run();
+        const images=artwork(d.id);
+        const profileStatement=db.prepare("UPDATE communities SET name=?,kind=?,ecosystem=?,description=?,representative=?,role=?,handle=?,official_url=?,open=?,project_category=?,handles_spots=?,updated_at=?,x_user_id=?,discord_user_id=?,manager_id=?,audience_size=?,interests=?,past_collaborations=?,avatar_url=?,banner_url=?,availability=?,current_projects=?,contact_route=?,spots_listed=?,available_spots=?,spots_deadline=?,eligibility=?,hiring=?,hiring_details=?,compensation=?,show_allocations=? WHERE id=? AND owner_id=? AND deleted_at='' AND (?=0 OR ?>=COALESCE((SELECT SUM(approved_spots) FROM collaborations WHERE target_id=communities.id AND kind='Whitelist spots' AND status IN ('accepted','completed')),0))")
+          .bind(d.name,d.kind,d.ecosystem,d.description,d.representative,d.role,d.handle.replace(/^@/,""),d.officialUrl,d.open?1:0,d.kind==="Project"?d.projectCategory:"Other",d.kind==="Project"&&d.handlesSpots?1:0,now,d.xUserId,d.discordUserId,managerId,d.audienceSize,d.interests,d.pastCollaborations,images.avatarUrl,images.bannerUrl,d.availability,d.currentProjects,d.contactRoute,d.kind==="Project"&&d.spotsListed?1:0,d.availableSpots,d.spotsDeadline,d.eligibility,d.kind==="Project"&&d.hiring?1:0,d.hiringDetails,d.compensation,d.showAllocations?1:0,d.id,user.userId,d.spotsListed?1:0,d.availableSpots);
+        const [profileUpdate]=await db.batch([profileStatement,...images.statements]);
         if(!profileUpdate.meta.changes)return json({error:"The allocation changed while you were editing. Refresh and try again."},409);
         await saveCMs(d.id);
         return json({id:d.id});
@@ -105,8 +133,10 @@ export async function POST(request:Request){
       const id=crypto.randomUUID();
       const count=await db.prepare("SELECT COUNT(*) AS n FROM communities WHERE owner_id=? AND deleted_at=''").bind(user.userId).first<{n:number}>();
       if((count?.n||0)>=20)return json({error:"The pilot supports up to 20 profiles per account."},400);
-      await db.prepare(`INSERT INTO communities (id,owner_id,name,kind,ecosystem,description,representative,role,handle,official_url,open,created_at,project_category,handles_spots,updated_at,x_user_id,discord_user_id,manager_id,audience_size,interests,past_collaborations,avatar_url,banner_url,availability,current_projects,contact_route,spots_listed,available_spots,spots_deadline,eligibility,hiring,hiring_details,compensation,show_allocations) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-        .bind(id,user.userId,d.name,d.kind,d.ecosystem,d.description,d.representative,d.role,d.handle.replace(/^@/,""),d.officialUrl,d.open?1:0,now,d.kind==="Project"?d.projectCategory:"Other",d.kind==="Project"&&d.handlesSpots?1:0,now,d.xUserId,d.discordUserId,managerId,d.audienceSize,d.interests,d.pastCollaborations,d.avatarUrl,d.bannerUrl,d.availability,d.currentProjects,d.contactRoute,d.kind==="Project"&&d.spotsListed?1:0,d.availableSpots,d.spotsDeadline,d.eligibility,d.kind==="Project"&&d.hiring?1:0,d.hiringDetails,d.compensation,d.showAllocations?1:0).run();
+      const images=artwork(id);
+      const profileStatement=db.prepare(`INSERT INTO communities (id,owner_id,name,kind,ecosystem,description,representative,role,handle,official_url,open,created_at,project_category,handles_spots,updated_at,x_user_id,discord_user_id,manager_id,audience_size,interests,past_collaborations,avatar_url,banner_url,availability,current_projects,contact_route,spots_listed,available_spots,spots_deadline,eligibility,hiring,hiring_details,compensation,show_allocations) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .bind(id,user.userId,d.name,d.kind,d.ecosystem,d.description,d.representative,d.role,d.handle.replace(/^@/,""),d.officialUrl,d.open?1:0,now,d.kind==="Project"?d.projectCategory:"Other",d.kind==="Project"&&d.handlesSpots?1:0,now,d.xUserId,d.discordUserId,managerId,d.audienceSize,d.interests,d.pastCollaborations,images.avatarUrl,images.bannerUrl,d.availability,d.currentProjects,d.contactRoute,d.kind==="Project"&&d.spotsListed?1:0,d.availableSpots,d.spotsDeadline,d.eligibility,d.kind==="Project"&&d.hiring?1:0,d.hiringDetails,d.compensation,d.showAllocations?1:0);
+      await db.batch([profileStatement,...images.statements]);
       await saveCMs(id);
       return json({id},201);
     }

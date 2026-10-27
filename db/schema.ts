@@ -72,3 +72,10 @@ export const accounts=sqliteTable("accounts",{
  displayName:text("display_name").notNull(),avatar:text("avatar").notNull().default(""),
  updatedAt:text("updated_at").notNull(),
 },t=>[uniqueIndex("accounts_username_unique").on(t.username)]);
+
+// Keep uploaded bytes out of directory reads; profiles hold only small image URLs.
+export const profileImages=sqliteTable("profile_images",{
+ profileId:text("profile_id").notNull().references(()=>communities.id,{onDelete:"cascade"}),
+ kind:text("kind").notNull(),version:text("version").notNull(),
+ dataUrl:text("data_url").notNull(),updatedAt:text("updated_at").notNull(),
+},t=>[primaryKey({columns:[t.profileId,t.kind]})]);

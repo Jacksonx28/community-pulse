@@ -531,3 +531,31 @@ html{color-scheme:light}
 .delete-profile-button{min-height:44px;padding:10px 16px;border:1px solid #a3343c;border-radius:6px;color:white;background:#a3343c;font-size:14px}
 .delete-profile-button:disabled{cursor:not-allowed;opacity:.45}
 @media(max-width:600px){.delete-profile-actions{display:grid;grid-template-columns:1fr 1fr}}
+/* Direct image uploads and an inline crop editor for every managed profile. */
+.profile-artwork-editor{padding:22px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:grid;gap:16px;min-width:0}
+.profile-artwork-heading h2{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--foreground)}
+.profile-artwork-heading p{font-size:14px;line-height:1.6;color:var(--muted-foreground);margin-top:5px}
+.profile-artwork-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.65fr);gap:18px}
+.profile-image-field{border:1px solid var(--border);border-radius:9px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;background:var(--card)}
+.profile-image-field>strong{font-size:14px;font-weight:550;color:var(--foreground)}
+.profile-photo-display{display:grid;place-items:center;min-height:104px;flex:1}
+.profile-upload-avatar{height:88px!important;width:88px!important;font-size:24px!important;border:1px solid var(--border);border-radius:50%;overflow:hidden;background:#eef1fb;color:#53627e;display:grid;place-items:center}
+.profile-upload-avatar img{height:100%;width:100%;object-fit:cover}
+.profile-upload-banner{min-height:104px;aspect-ratio:3/1;border:1px dashed #cbd2e2;border-radius:6px;background:#f5f7fc;overflow:hidden;display:grid;place-items:center;flex:1}
+.profile-upload-banner img{height:100%;width:100%;object-fit:cover}
+.profile-upload-banner>span{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;line-height:1.4;color:#67748d;padding:10px}
+.profile-image-actions{display:flex;flex-wrap:wrap;align-items:center;gap:5px 12px}
+.profile-image-actions .secondary-btn{font-size:13px;min-height:42px;padding:9px 12px}
+.profile-image-actions .text-link{font-size:12px;min-height:36px;display:inline-flex;align-items:center;background:transparent;border:0}
+.profile-image-file{position:absolute;width:1px!important;height:1px!important;padding:0!important;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0!important}
+.profile-artwork-hint,.profile-image-progress{font-size:12px!important;line-height:1.6!important;color:var(--muted-foreground)}
+.profile-crop-editor{border:1px solid #d6deee;border-radius:8px;background:#f8faff;padding:16px;display:grid;gap:16px;min-width:0}
+.profile-crop-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;color:var(--foreground)}
+.profile-crop-heading strong{font-weight:550}.profile-crop-heading span{font-size:12px;color:var(--muted-foreground)}
+.profile-crop-canvas{display:block;max-width:100%;height:auto;background:#fff;border:1px solid #d5ddec;border-radius:5px}
+.profile-crop-canvas.photo-crop{width:240px;justify-self:center}.profile-crop-canvas.banner-crop{width:100%;aspect-ratio:3/1}
+.profile-crop-controls{display:grid;gap:12px}.profile-crop-controls label{display:grid!important;grid-template-columns:130px minmax(0,1fr);align-items:center;gap:12px;font-size:13px!important;font-weight:400!important}
+.pulse-form .profile-crop-controls input[type=range]{width:100%;min-height:44px;height:44px;padding:0;border:0;box-shadow:none;background:transparent;accent-color:#3559f4;cursor:pointer}
+.profile-crop-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.profile-image-links{border-top:1px solid var(--border);padding-top:12px}.profile-image-links>summary{cursor:pointer;font-size:13px;color:var(--muted-foreground);min-height:28px;line-height:1.6;list-style-position:inside}.profile-image-links .form-row{margin-top:12px}.profile-image-links small{display:block;font-size:12px;line-height:1.5;margin-top:8px;color:var(--muted-foreground)}
+@media(max-width:600px){.profile-artwork-fields{grid-template-columns:minmax(0,1fr)}.profile-image-field{padding:14px}.profile-photo-display{min-height:92px}.profile-upload-banner{min-height:100px;max-height:155px}.profile-crop-editor{padding:12px}.profile-crop-controls label{grid-template-columns:1fr;gap:3px}.profile-crop-actions>button{flex:1}.profile-crop-heading{align-items:flex-start}.profile-crop-heading span{max-width:110px;text-align:right}}

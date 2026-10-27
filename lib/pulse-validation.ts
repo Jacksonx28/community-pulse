@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { PROFILE_IMAGE_LIMITS, profileImageReference, validProfileImage, type ProfileImageKind } from "./profile-images";
+const profileImage=(kind:ProfileImageKind)=>z.string().trim().max(PROFILE_IMAGE_LIMITS[kind],"Choose a smaller image.").refine(value=>validProfileImage(value,kind),"Choose a JPG, PNG or WebP image, or a valid image link.").default("");
 const webUrl=z.string().trim().max(400).refine(value=>{try {return ["https:","http:"].includes(new URL(value).protocol)}catch{return false}},"Enter a valid website URL.");
 export const communityInput=z.object({
   id:z.string().uuid().optional(),
@@ -13,8 +15,8 @@ export const communityInput=z.object({
   audienceSize:z.number().int().min(0).max(100000000).default(0),
   interests:z.string().trim().max(300).default(""),
   pastCollaborations:z.string().trim().max(600).default(""),
-  avatarUrl:z.union([webUrl,z.literal("")]).default(""),
-  bannerUrl:z.union([webUrl,z.literal("")]).default(""),
+  avatarUrl:profileImage("avatar"),
+  bannerUrl:profileImage("banner"),
   availability:z.enum(["Available for hire","Open to more projects","Busy"]).default("Available for hire"),
   currentProjects:z.string().trim().max(400).default(""),
   contactRoute:z.enum(["CM","Project team"]).default("CM"),
@@ -25,6 +27,7 @@ export const communityInput=z.object({
   xUserId:z.string().regex(/^(?:[1-9]\d{0,19})?$/, "Enter a numeric X user ID, or leave it blank.").default(""),
   discordUserId:z.string().regex(/^(?:[1-9]\d{16,19})?$/, "Enter a numeric Discord user ID, or leave it blank.").default(""),
 }).strict().superRefine((d,ctx)=>{
+ for(const [field,kind] of [["avatarUrl","avatar"],["bannerUrl","banner"]] as const){const ref=profileImageReference(d[field]);if(ref&&(ref.id!==d.id||ref.kind!==kind))ctx.addIssue({code:"custom",path:[field],message:"Upload an image or use a direct image link for this profile."});}
  if(d.kind!=="CM"&&!d.officialUrl)ctx.addIssue({code:"custom",message:"Add an official project or community link."});
  if(d.kind==="Project"&&d.spotsListed&&(!d.handlesSpots||!d.spotsDeadline||!d.eligibility||d.availableSpots<1))ctx.addIssue({code:"custom",message:"Spot listings need an allocation, deadline, eligibility, and allocation responsibility."});
  if(d.kind==="Project"&&d.hiring&&!d.hiringDetails)ctx.addIssue({code:"custom",message:"Describe the CM role you are hiring for."});
