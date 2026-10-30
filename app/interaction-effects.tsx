@@ -8,7 +8,7 @@ export default function InteractionEffects(){
   const feedback=(event:MouseEvent)=>{
    if(reduced.matches||!(event.target instanceof Element))return;
    const target=event.target.closest<HTMLElement>('button, a, [role="menuitem"], [role="radio"]');
-   if(!target||target.matches(':disabled, [aria-disabled="true"]'))return;
+   if(!target||target.matches(':disabled, [aria-disabled="true"], [data-status], .pulse-drawer-grab')||target.closest('[data-pulse-tour="card"]'))return;
    animations.get(target)?.cancel();
    const transform=getComputedStyle(target).transform;
    const base=transform==="none"?"":transform;
